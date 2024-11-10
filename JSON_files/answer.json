@@ -1,0 +1,22 @@
+{
+    "presentation":
+    [
+        "Je suis JARVIS, votre assistant personnel. J'ai ete conçu pour vous aider dans votre quotidien. n'hesitez vous à me demander de l'aide!"
+    ],
+    "veille":
+    [
+        "Je vais mettre en veille, n hesitez pas a me reveiller"
+    ],
+    "recherche rapide":
+    {
+        "success":
+        [ 
+            "Voici les informations que j'ai trouvé"
+        ],
+        "failure":
+        [
+            "Je n'ai pas trouvé d'information a ce sujet. Souhaitez vous une recherche plus approfondi?"
+        ]
+    }
+    
+}
