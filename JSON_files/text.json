@@ -28,11 +28,6 @@
         "Comment t'appelles tu?",
         " Présentes toi"
     ],
-    "musique":
-    [
-        "musique",
-        "playlist"
-    ],
     "localisation":
     [
         "ou sommes-nous",
@@ -43,5 +38,23 @@
         "recherche rapide",
         "qu'est ce",
         "recherche rapidement"
+    ],
+    "recherche":
+    [
+        "cherche sur internet",
+        "cherche",
+        "google",
+        "internet"
+    ],
+    "youtube":
+    [
+        "Youtube",
+        "recherche sur Youtube"
+    ],
+    "musique":
+    [   
+        "Joue de la musique",
+        "musique",
+        "son"
     ]
 }

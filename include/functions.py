@@ -2,12 +2,15 @@ import mysql.connector
 import speech_recognition as sr
 import re
 import mysql
+import random
 import pyttsx3
 import speech_recognition as sr
+import webbrowser
 from datetime import datetime
 import json
 import requests
 import wikipediaapi
+from datetime import datetime
 from googletrans import Translator
 from include.header import *
 
@@ -26,6 +29,67 @@ translator = Translator()
 # Fast research:
 user_agent_wikipedia = "JarvisPython/1.0 (https://github.com/sebastien-doyez2812/AI-projects/AI_ChatBot)"
 wiki = wikipediaapi.Wikipedia(user_agent_wikipedia, 'fr')
+
+
+def process_command(command, data, answer):
+    # Basic interaction:
+    print(command)
+    print(data["meteo"])
+    if any(keyword in command for keyword in data["salutation"]):
+        speak(f"Bonjour {USER}, Comment puis je vous aider aujourd'hui")
+        return 
+    
+    if any(keyword in command for keyword in data["presentation"]):
+        speak(answer["presentation"])
+        return
+
+    if  any(keyword in command for keyword in data["veille"]):
+        speak(answer["veille"])
+        return
+
+    # Basic fonctionnalities:
+    # What time is it?
+    if any(keyword in command for keyword in data["heure"]):
+        get_hour()
+        return
+
+    # What's the weather?
+    if any(keyword in command for keyword in data["meteo"]):
+        query = re.search(r"météo pour (.+)", command) or re.search(r"météo à (.+)", command)
+        if query == None:
+            get_weather()
+        else:
+            get_weather_at(query.group(1))
+        return
+
+    # Where are we?
+    if any(keyword in command for keyword in data["localisation"]):
+        city, region = get_localisation()
+        speak(f"Nous sommes a {city}, {region}")
+        return
+    
+    # Search on the web
+    if any(keyword in command for keyword in data["youtube"]):
+        query = re.search(r"recherche sur Youtube (.+)", command)
+        if query != None:
+            youtube(query.group(1))
+        return
+
+    if any(keyword in command for keyword in data["recherche rapide"]):
+        print("recherche rapide")
+        do_fast_research(command)
+        return
+    
+    if any(keyword in command for keyword in data["recherche"]):
+        query = re.search(r"cherche (.+)", command) 
+        search(query.group(1))
+        return
+    
+    # Functions with the database:
+    if any(keyword in command for keyword in data["musique"]):
+        play_music()
+
+    
 
 def speak(sentence):
     """
@@ -63,7 +127,7 @@ def read_text_from_json(path):
     with open(path, 'r', encoding='utf-8') as file:
         data = json.load(file)
     return data
-"""
+
 # For the Database:
 jarvis_database = mysql.connector.connect(
     host="LocalHost",
@@ -72,7 +136,7 @@ jarvis_database = mysql.connector.connect(
     database="jarvis_db"
 )
 jarvis_cursor = jarvis_database.cursor()
-"""
+
 
 # Basics fonctionnalities:
 def get_hour():
@@ -166,3 +230,61 @@ def do_fast_research(command):
     else:
         #TODO: a mettre dans le json
         speak("Je n'ai pas compris votre demande")
+
+def search(query):
+    """
+    Do a research and open the web browser for a query
+
+    ARGS:
+        query: string, what we want to research
+    """
+    url = f"https://www.google.com/search?q={query}"
+    webbrowser.open(url)
+    speak(f"Voici les résultats pour {query} sur Google.")
+
+def get_weather_at(city):
+    """
+    Give us the weather at a specific place
+    
+    ARGS:
+        city: string
+    """
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={read_text_from_json(PATH_PARAMETERS)["api_meteo"][0]}&units=metric"
+    try: 
+        response = requests.get(url)
+        data = response.json()       
+        if data["cod"] != "404": #error code
+            weather = data["main"]
+            temp = weather["temp"]
+            desc = data["weather"][0]["description"]
+            description = translator.translate(desc, src='en', dest='fr')
+            speak(f"La température à {city} est de {temp} degrés Celsius, avec {description.text}")
+        else:
+            speak(f"Je n'ai pas pu trouver la météo pour {city}")
+    except Exception as e:
+        speak(f"Je n'ai pas pu récupérer les données météos. Erreur {str(e)}")
+
+
+def youtube(request):
+    """
+    Research on Youtube
+
+    ARGS:
+        request: string, what we want to research on Youtube
+    """
+    url = f"https://www.youtube.com/results?search_query={request}"
+    webbrowser.open(url)
+    speak(f"Voici les résultats pour {request} sur Youtube.")
+
+################################################
+# Functions with the use of the database       #
+################################################
+
+# Play musics:
+def play_music():
+    index = random.randint(0,10)
+    jarvis_cursor.execute(f"SELECT link FROM musique WHERE id = {index}")
+    url = jarvis_cursor.fetchall()[0][0]
+    print(url)
+    webbrowser.open(url)
+
