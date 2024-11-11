@@ -43,5 +43,17 @@
         "recherche rapide",
         "qu'est ce",
         "recherche rapidement"
+    ],
+    "recherche":
+    [
+        "cherche sur internet",
+        "cherche",
+        "google",
+        "internet"
+    ],
+    "youtube":
+    [
+        "Youtube",
+        "recherche sur Youtube"
     ]
 }
