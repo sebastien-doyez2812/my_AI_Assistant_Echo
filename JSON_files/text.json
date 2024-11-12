@@ -56,5 +56,13 @@
         "Joue de la musique",
         "musique",
         "son"
+    ],
+    "historique":
+    [
+        "historique",
+        "mémoire",
+        "memoire",
+        "requète",
+        "contenant"
     ]
 }

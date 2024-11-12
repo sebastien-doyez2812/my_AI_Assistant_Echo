@@ -43,6 +43,28 @@ def process_command(command, data, answer, id_user):
     print(command)
     print(data["meteo"])
     add_request(command, id_user)
+
+    if any(keyword in command for keyword in data["historique"]):
+        # contenant le mot ___ ou contenant ____
+        try_to_find1 = re.search("contenant le mot (.+)", command)
+        if try_to_find1 != None:
+            word_to_find = try_to_find1.group(1)
+        else:
+            try_to_find2 = re.search("contenant (.+)", command)
+            if try_to_find2 != None:
+                word_to_find = try_to_find2.group(1)
+        
+        if word_to_find != None:
+            
+            print(f"on doit trouver: {word_to_find}")
+            day, hour, minute = find_when(word_to_find)
+            speak("Cette requete à été faite")
+            for i in range(len(day)):
+                speak(f" le {day}, a {hour} heure et {minute} minutes.")
+        else: 
+            print("find_word ERROR: unable to understand the word")
+        return
+    
     if any(keyword in command for keyword in data["salutation"]):
         speak(f"Bonjour {USER}, Comment puis je vous aider aujourd'hui")
         return 
@@ -96,6 +118,8 @@ def process_command(command, data, answer, id_user):
     # Functions with the database:
     if any(keyword in command for keyword in data["musique"]):
         play_music()
+        return
+    
 
     
 
@@ -337,4 +361,39 @@ def add_request(command, id_user):
         jarvis_cursor.execute(f"INSERT INTO requests (day, hour, minute, id_user, command) VALUES ('{day}', '{hour}', '{minute}', '{int(id_user)}', '{command}')")
     except Exception as e:
         print(f"add_request ERROR: {e}")
+
+def remove_from_request_history():
+    """
+    TO IMPROVE:
+    delete all the request the 30th of the month
+
+    ARGS: None.
+    """
+    try:
+        if int(datetime.now().strftime("%m")) == 30:
+            jarvis_cursor.execute("DELETE FROM 'request")
+    except Exception as e:
+        print(f"remove_from_request ERROR: {e}")
+
+#TODO: trouver quand une request contenant keyword a été faite:
+def find_when(keyword):
+    """
+    find when the request with the keyword inside was prononce.
+
+    ARGS:
+        keyword: string, word inside a request we want to find
+    """
+    try:
+        keyword = "%"+keyword+"%"
+        sql_request = f"SELECT day, hour, minute FROM requests WHERE command LIKE '{keyword}'"
+        print(sql_request)
+        jarvis_cursor.execute(sql_request)
+        print(jarvis_cursor.fetchall())
+        day, hour, minute = []
+        day.append(jarvis_cursor.fetchall()[0][0])
+        hour.append(jarvis_cursor.fetchall()[1])
+        minute.append(jarvis_cursor.fetchall()[2])
+        return (day, hour, minute)
+    except Exception as e:
+        print(f"find_when ERROR: {e}")
 
