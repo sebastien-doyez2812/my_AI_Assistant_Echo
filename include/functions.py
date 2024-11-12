@@ -14,7 +14,6 @@ from datetime import datetime
 from googletrans import Translator
 from include.header import *
 
-
 ####################################
 ##      STANDARD FUNCTIONS        ##
 ####################################         
@@ -30,11 +29,20 @@ translator = Translator()
 user_agent_wikipedia = "JarvisPython/1.0 (https://github.com/sebastien-doyez2812/AI-projects/AI_ChatBot)"
 wiki = wikipediaapi.Wikipedia(user_agent_wikipedia, 'fr')
 
+# For the Database:
+jarvis_database = mysql.connector.connect(
+    host="LocalHost",
+    user="root",
+    password="",
+    database="jarvis_db"
+)
+jarvis_cursor = jarvis_database.cursor()
 
-def process_command(command, data, answer):
+def process_command(command, data, answer, id_user):
     # Basic interaction:
     print(command)
     print(data["meteo"])
+    add_request(command, id_user)
     if any(keyword in command for keyword in data["salutation"]):
         speak(f"Bonjour {USER}, Comment puis je vous aider aujourd'hui")
         return 
@@ -128,14 +136,7 @@ def read_text_from_json(path):
         data = json.load(file)
     return data
 
-# For the Database:
-jarvis_database = mysql.connector.connect(
-    host="LocalHost",
-    user="root",
-    password="",
-    database="jarvis_db"
-)
-jarvis_cursor = jarvis_database.cursor()
+
 
 
 # Basics fonctionnalities:
@@ -282,9 +283,58 @@ def youtube(request):
 
 # Play musics:
 def play_music():
-    index = random.randint(0,10)
-    jarvis_cursor.execute(f"SELECT link FROM musique WHERE id = {index}")
-    url = jarvis_cursor.fetchall()[0][0]
-    print(url)
-    webbrowser.open(url)
+    try:
+        index = random.randint(0,10)
+        jarvis_cursor.execute(f"SELECT link FROM musique WHERE id = {index}")
+        url = jarvis_cursor.fetchall()[0][0]
+        print(url)
+        webbrowser.open(url)
+    except Exception as e:
+        print (f"play_music ERROR: {e}")
+
+def find_phone(name):
+    """
+    Give the phone number of somebody in the database
+
+    ARGS:
+        name = string, ={papy, papa}
+    """
+    try:
+        jarvis_cursor.execute(f"SELECT phone FROM `repertoire` WHERE name = '{name}'")
+        phone_number = jarvis_cursor.fetchall()[0]
+        return(phone_number)
+    except Exception as e:
+        print(f"find_phone ERROR: {e}")
+
+
+def find_email(name):
+    """
+    Give the email of somebody in the database
+
+    ARGS:
+        name = string, ={papy, papa}
+    """
+    try:
+        jarvis_cursor.execute(f"SELECT email FROM `repertoire` WHERE name = '{name}'")
+        phone_number = jarvis_cursor.fetchall()[0]
+        return(phone_number)
+    except Exception as e:
+        print(f"find_email ERROR: {e}")
+
+def add_request(command, id_user):
+    """
+    Save all the requests for the different user
+
+    ARGS:
+        command: string, what the user said
+        id_user: int
+    """
+    try:
+        now = datetime.now()
+        day = now.strftime("%h:%m")
+        hour   = int(now.strftime("%H"))
+        minute = int(now.strftime("%M"))
+        jarvis_cursor.execute(f"INSERT INTO requests (day, hour, minute, id_user, command) VALUES ('{day}', '{hour}', '{minute}', '{int(id_user)}', '{command}')")
+    except Exception as e:
+        print(f"add_request ERROR: {e}")
 

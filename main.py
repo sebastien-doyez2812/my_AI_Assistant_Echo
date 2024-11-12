@@ -2,10 +2,11 @@ import threading
 from include.functions import *
 from include.header import *
 
-def process_command(command, data, answer):
+def process_command(command, data, answer, id_user):
     # Basic interaction:
     print(command)
     print(data["meteo"])
+    add_request(command, id_user)
     if any(keyword in command for keyword in data["salutation"]):
         speak(f"Bonjour {USER}, Comment puis je vous aider aujourd'hui")
     if any(keyword in command for keyword in data["presentation"]):
@@ -39,7 +40,7 @@ def main():
         print(command)
 
         if command != None:
-            process_command(command,data,answer)
+            process_command(command,data,answer, ID_USER)
 
 
 main()
