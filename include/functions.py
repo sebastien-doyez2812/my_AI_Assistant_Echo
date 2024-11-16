@@ -6,6 +6,7 @@ import random
 import pyttsx3
 import speech_recognition as sr
 import webbrowser
+import webbrowser
 from datetime import datetime
 import json
 import requests
@@ -236,7 +237,6 @@ def get_localisation():
     """
     try:
         response = requests.get("https://ipinfo.io")
-        print(response)
         data = response.json()
         city = data["city"]
         region = data["region"]
@@ -254,13 +254,10 @@ def get_weather():
     """
     try:
         api_key_meteo = read_text_from_json(PATH_PARAMETERS)["api_meteo"][0]
-        print(api_key_meteo)
         city, _ = get_localisation()
-        print(city)
         url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key_meteo}&units=metric"
         response = requests.get(url)
         data = response.json()
-        print(data)
         if data["cod"] != "404":
 
             # Get the data:
@@ -282,7 +279,7 @@ def do_fast_research(command):
     ARGS: 
         the command( what JARVIS heard)
     """
-    query = re.search(r"recherche rapide sur (.+)", command) or re.search(r"Qu'est ce qu'un (.+)", command) or re.search(r"Qu'est ce qu'une (.+)", command) or re.search(r"Reherche rapidement (.+)", command)
+    query = re.search(r"recherche rapide sur (.+)", command) or re.search(r"Qu'est ce qu'un (.+)", command) or re.search(r"Qu'est ce qu'une (.+)", command) or re.search(r"Recherche rapidement (.+)", command)
     print(query)
     if query != None:
         page = wiki.page(query.group(1))
@@ -295,8 +292,8 @@ def do_fast_research(command):
             command = listen()
 
             if "oui" in command:
-                print("oui")
-                #TODO
+                search(query.group(1))
+                speak(f"Voici les résultats pour {query.group(1)}")
     else:
         #TODO: a mettre dans le json
         speak("Je n'ai pas compris votre demande")
