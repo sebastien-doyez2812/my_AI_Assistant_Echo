@@ -611,14 +611,15 @@ def get_event(param, value1, value2= None):
     """
     request = None
     if param == "name":
-        request = f"SELECT description, hour, minute, day, month, importance FROM `events` WHERE description = '{value}'"
+        request = f"SELECT description, hour, minute, day, month, importance FROM `events` WHERE description = '{value1}'"
     if param == "day":
         request = f"SELECT description, hour, minute, day, month, importance FROM `events` WHERE day = {value1} AND month = {value2}"
     if request:
         print(request)
         jarvis_cursor.execute(request)
-
-        result = jarvis_cursor.fetchall()[0]
+        result = jarvis_cursor.fetchall()
+        print(result)
+        result = result[0]
         print(result)
         if result == []:
             speak(" il n'y a pas d'événements prévu pour ce jour")
