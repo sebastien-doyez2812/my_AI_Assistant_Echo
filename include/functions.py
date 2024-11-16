@@ -39,6 +39,30 @@ jarvis_database = mysql.connector.connect(
 jarvis_cursor = jarvis_database.cursor()
 
 def process_command(command, data, answer, id_user):
+    """
+    DEFS:
+    ------
+    List of fonctionnalities:
+    _ historique
+    _ salutation
+    _ presentation
+    _ veille
+    _ Heure
+    _ météo
+    _ localisation
+    _ youtube
+    _ recherche
+    _ recherche rapide
+    _ musique
+    _ evenement ( event of the day + add a event )
+    
+    ARGS:
+    -----
+    command: string, what JARVIS heard.
+    data, answer: data from JSON
+    id_user: for now, not really usefull
+
+    """
     # Basic interaction:
     print(command)
     print(data["meteo"])
@@ -119,6 +143,27 @@ def process_command(command, data, answer, id_user):
     if any(keyword in command for keyword in data["musique"]):
         play_music()
         return
+    if any(keyword in command for keyword in data["event"]):
+        print(command) #TODO delete
+        if "ajoute" in command:
+            print(1)
+            add_event()
+            return
+        if "ai-je" in command:
+            print(2)
+            # TODO: a améliorer dans le futur:
+            # mettre dans le json
+            if "aujourd'hui" in command:
+                today = datetime.now()
+                get_event("day", today.strftime("%d") , today.strftime("%m"))
+                return
+            if "description" in command:
+                speak("Quel est le nom de l'événement?")
+                name = listen()
+                get_event("name", name)
+                return
+
+
     
 
     
@@ -358,6 +403,7 @@ def add_request(command, id_user):
         day = now.strftime("%h:%m")
         hour   = int(now.strftime("%H"))
         minute = int(now.strftime("%M"))
+        command = command.replace("'","")
         jarvis_cursor.execute(f"INSERT INTO requests (day, hour, minute, id_user, command) VALUES ('{day}', '{hour}', '{minute}', '{int(id_user)}', '{command}')")
     except Exception as e:
         print(f"add_request ERROR: {e}")
@@ -378,9 +424,12 @@ def remove_from_request_history():
 #TODO: trouver quand une request contenant keyword a été faite:
 def find_when(keyword):
     """
+    DEFS:
+    -----
     find when the request with the keyword inside was prononce.
 
     ARGS:
+    -----
         keyword: string, word inside a request we want to find
     """
     try:
@@ -397,3 +446,203 @@ def find_when(keyword):
     except Exception as e:
         print(f"find_when ERROR: {e}")
 
+def add_event():
+    """
+    DEF:
+    -----
+    Help the user to define the event.
+
+    ARGS:
+    -----
+    None
+
+    Return:
+    ------
+    None 
+    
+    """
+    speak("Quand a lieu l'événement?")
+    date = listen()
+    if "le" in date or "the" in date:
+        _,day, month = date.split()
+    else:
+        day, month = date.split()
+    speak("A quel heure a lieu l'événement?")
+    match = None
+    while match == None:
+        hour_and_minute = listen()
+        match = re.search(r"(\d+) h (\d+)", hour_and_minute)
+        if match:
+            hour = match.group(1)
+            minute = match.group(2)
+        else:
+            speak("Je n'ai pas compris l'heure, Veuillez redire l'heure")
+    speak("Combien de temps dure l'événement en heure?")
+    duration = None
+    duration = listen()
+    while duration == None:
+        speak("Je n'ai pas compris, veuillez répéter.")
+        duration = listen()
+    speak("Quelle est l'importance de l'événement? faible, modéré, important ou critique")
+    importance = None
+    importance = listen()
+    while importance not in ["faible", "modéré", "important", "critique"]:
+        speak("Je n'ai pas compris, veuillez répéter")
+        importance = listen()
+        print(importance)
+    speak("Quelle est le nom de l'événement?")
+    name = listen()
+
+    # All are string, we need to cast before going in DB:
+    try:
+        day = int(day)
+        minute = int(minute)
+        hour = int(hour)
+        duration = int(duration)
+    except Exception as e:
+        print(f"[process: events] Error: {e}")
+        return
+    print(name, hour,minute,day,month,duration,importance)
+    add_events_in_database(name, hour, minute, day, month, duration, importance)
+
+def add_events_in_database(name, hour, minute, day, month, duration, importance):
+    """
+    DEF:
+    ----
+
+    Add the event in the Database
+
+    ARGS:
+    -----
+    name:       string, it's the name of the event
+    
+    hour:       int
+    
+    minute:     int
+    
+    day:        int
+    
+    month:      string
+    
+    duration:   int
+
+    importance: int
+
+    RETURN:
+    ------
+    None
+    """
+    month_dic = {
+        "janvier"     : 1,
+        "février"     : 2,
+        "mars"        : 3,
+        "avril"       : 4,
+        "mai"         : 5,
+        "juin"        : 6,
+        "juillet"     : 7,
+        "aout"        : 8,
+        "septembre"   : 9,
+        "octobre"     : 10,
+        "novembre"    : 11,
+        "décembre"    : 12
+    }
+    importance_dic = {
+        "faible": 0,
+        "modéré":1,
+        "important":2,
+        "critique":3
+    }
+
+    # Test and affectation:
+    id_month = month_dic.get(month)
+    print(id_month)
+    if id_month == None:
+        print(f"[add_events_in_database] Error: month not in dictionnary")
+        return
+    
+    importance_id = importance_dic.get(importance)
+    if importance_id == None:
+        print(f"[add_events_in_database] Error: importance not in dictionnary")
+        return
+    
+    # Test to see if the hour, minute are realistic:
+    if hour > 23 or hour <0:
+        print(f"[add_events_in_database] Error: hour is between 0 and 23")
+        return
+    
+    if minute > 59 or minute <0:
+        print(f"[add_events_in_database] Error: minutes are between 0 and 59")
+        return
+    
+    #TODO: ajouter une boucle de condition pour le nombre
+    # de jours dans un mois!!!!
+
+    # Test of the day:
+    if day < 0 or day > 31:
+        print(f"[add_events_in_database] Error: days are between 0 and 31")
+        return
+    
+    # Get the id for the Event:
+    request_for_id = "SELECT COUNT(*) FROM `events` WHERE 1"
+    jarvis_cursor.execute(request_for_id)
+    id_event = jarvis_cursor.fetchall()[0][0]
+    print(id_event)
+
+    # Insert the event:
+    request_insert=(f"INSERT INTO `events`(`hour`, `minute`, `day`, `month`, `duration`, `description`, `importance`, `id`) VALUES ('{hour}','{minute}','{day}','{id_month}','{duration}','{name}','{importance_id}','{id_event}')")
+    
+    jarvis_cursor.execute(request_insert)
+
+
+def get_event(param, value1, value2= None):
+    """
+    DEFS: 
+    ----
+
+    Search event in the events database.
+
+    ARGS:
+    ----
+
+    param: string, parameter to check
+            can be "name", "day"
+    value: string or int, value of the parameter
+
+    """
+    request = None
+    if param == "name":
+        request = f"SELECT description, hour, minute, day, month, importance FROM `events` WHERE description = '{value}'"
+    if param == "day":
+        request = f"SELECT description, hour, minute, day, month, importance FROM `events` WHERE day = {value1} AND month = {value2}"
+    if request:
+        print(request)
+        jarvis_cursor.execute(request)
+
+        result = jarvis_cursor.fetchall()[0]
+        print(result)
+        if result == []:
+            speak(" il n'y a pas d'événements prévu pour ce jour")
+        else:
+            #TODO: Crée un dictionnaire globale??
+            importance_dic_reverse = {
+                0 :"faible",
+                1: "modéré",
+                2: "important",
+                3: "critique"
+            }
+
+            month_dic_reverse = {
+                1: "janvier"   ,
+                2: "février"   ,
+                3: "mars"      ,
+                4: "avril"     ,
+                5: "mai"       ,
+                6: "juin"      ,
+                7: "juillet"   ,
+                8: "aout"      ,
+                9: "septembre" ,
+                10: "octobre"  ,
+                11: "novembre" ,
+                12: "décembre" 
+            }
+            speak(f"Vous avez l'événement {result[0]}, d'importance {importance_dic_reverse.get(result[5])}, prévu le {result[3]} {month_dic_reverse.get(result[4])} a {result[1]} heure {result[2]}")
