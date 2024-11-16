@@ -28,11 +28,6 @@
         "Comment t'appelles tu?",
         " Présentes toi"
     ],
-    "musique":
-    [
-        "musique",
-        "playlist"
-    ],
     "localisation":
     [
         "ou sommes-nous",
@@ -55,5 +50,26 @@
     [
         "Youtube",
         "recherche sur Youtube"
+    ],
+    "musique":
+    [   
+        "Joue de la musique",
+        "musique",
+        "son"
+    ],
+    "historique":
+    [
+        "historique",
+        "mémoire",
+        "memoire",
+        "requète",
+        "contenant"
+    ],
+    "event":
+    [
+        "événement",
+        "événements",
+        "event",
+        "events"
     ]
 }
