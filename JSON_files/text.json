@@ -18,7 +18,7 @@
     ],
     "heure":
     [
-        "quelle heure est-il?",
+        "quelle heure est-il",
         "donner l'heure"
     ],
     "presentation":
@@ -26,11 +26,11 @@
         "qui es-tu",
         "Comment tu t'appelles?",
         "Comment t'appelles tu?",
-        " Présentes toi"
+        " présentes-toi"
     ],
     "localisation":
     [
-        "ou sommes-nous",
+        "où sommes-nous",
         "localisation"
     ],
     "recherche rapide":
@@ -48,8 +48,8 @@
     ],
     "youtube":
     [
-        "Youtube",
-        "recherche sur Youtube"
+        "YouTube",
+        "recherche sur YouTube"
     ],
     "musique":
     [   
@@ -71,5 +71,13 @@
         "événements",
         "event",
         "events"
-    ]
+    ],
+    "AI":
+    {
+        "weather":
+        [
+            "habillé en fonction du temps",
+            "comment s'habiller"
+        ]
+    }
 }

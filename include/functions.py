@@ -57,6 +57,8 @@ def process_command(command, data, answer, id_user):
     _ musique
     _ evenement ( event of the day + add a event )
     
+    fonctionnalities with AI:
+    _ check the clothes and check the weather
     ARGS:
     -----
     command: string, what JARVIS heard.
@@ -66,7 +68,6 @@ def process_command(command, data, answer, id_user):
     """
     # Basic interaction:
     print(command)
-    print(data["meteo"])
     add_request(command, id_user)
 
     if any(keyword in command for keyword in data["historique"]):
@@ -164,6 +165,13 @@ def process_command(command, data, answer, id_user):
                 get_event("name", name)
                 return
 
+
+    #######################################
+    ##       AI Functionnalities         ##
+    #######################################
+
+    if any(keyword in command for keyword in data["AI"]["weather"]):
+        get_weather()
 
     
 
