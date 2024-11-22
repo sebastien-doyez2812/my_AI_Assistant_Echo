@@ -15,7 +15,7 @@ h1, h2, p {
 .jarvis-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 70vh;
     padding: 20px;
 }
 
@@ -99,6 +99,36 @@ h1, h2, p {
     font-size: 0.9em;
     border-top: 1px solid rgba(255, 255, 255, 0.2);
     color: rgba(255, 255, 255, 0.7);
+}
+
+.terminal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 90%;
+    padding: 50px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 40px;
+    box-shadow: 0 0 15px rgba(0, 255, 204, 0.5);
+}
+
+.terminal h2 {
+    font-size: 1.5em;
+    color: #00ffcc;
+    margin-bottom: 15px;
+}
+
+.terminal li {
+    font-size: 1em;
+    line-height: 1.5;
+}
+
+.terminal-screen{
+    display: flex;
+    flex: 1;
+    align-items: center;
+    margin-top: 20px;
+    justify-content: space-around;
 }
 
 /* Animations */
