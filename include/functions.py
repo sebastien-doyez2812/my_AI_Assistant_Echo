@@ -66,11 +66,14 @@ def process_command(command, data, answer, id_user):
     id_user: for now, not really usefull
 
     """
+
+    sentence = ""
     # Basic interaction:
     print(command)
     add_request(command, id_user)
 
     if any(keyword in command for keyword in data["historique"]):
+        word_to_find = None
         # contenant le mot ___ ou contenant ____
         try_to_find1 = re.search("contenant le mot (.+)", command)
         if try_to_find1 != None:
@@ -84,52 +87,66 @@ def process_command(command, data, answer, id_user):
             
             print(f"on doit trouver: {word_to_find}")
             day, hour, minute = find_when(word_to_find)
-            speak("Cette requete à été faite")
+            speak(read_text_from_json(PATH_ANSWER_JSON)["history"]["success"])
             for i in range(len(day)):
-                speak(f" le {day}, a {hour} heure et {minute} minutes.")
+                sentence = f" le {day}, a {hour} heure et {minute} minutes."
+                #TODO delete 
+                #speak(sentence)
         else: 
             print("find_word ERROR: unable to understand the word")
-        return
+        return sentence
     
     if any(keyword in command for keyword in data["salutation"]):
-        speak(f"Bonjour {USER}, Comment puis je vous aider aujourd'hui")
-        return 
+        sentence = f"Bonjour {USER}, Comment puis je vous aider aujourd'hui"
+        #TODO: to delete
+        #speak(sentence)
+        return sentence
     
     if any(keyword in command for keyword in data["presentation"]):
-        speak(answer["presentation"])
-        return
+        # TODO: to delete
+        #speak(answer["presentation"])
+        return answer["presentation"]
 
     if  any(keyword in command for keyword in data["veille"]):
-        speak(answer["veille"])
-        return
+        #TODO to delete
+        #speak(answer["veille"])
+        return answer["veille"]
 
     # Basic fonctionnalities:
     # What time is it?
     if any(keyword in command for keyword in data["heure"]):
-        get_hour()
-        return
+        sentence = get_hour()
+        #TODO: to delete
+        #speak(sentence)
+        return sentence
 
     # What's the weather?
     if any(keyword in command for keyword in data["meteo"]):
         query = re.search(r"météo pour (.+)", command) or re.search(r"météo à (.+)", command)
         if query == None:
-            get_weather()
+            sentence = get_weather()
         else:
-            get_weather_at(query.group(1))
-        return
+            sentence = get_weather_at(query.group(1))
+        
+        # TODO: to delete
+        #speak(sentence)
+        return sentence
 
     # Where are we?
     if any(keyword in command for keyword in data["localisation"]):
         city, region = get_localisation()
-        speak(f"Nous sommes a {city}, {region}")
-        return
+        sentence = f"Nous sommes a {city}, {region}"
+        
+        # TODO: to delete
+        #speak(sentence)
+        return sentence
     
     # Search on the web
     if any(keyword in command for keyword in data["youtube"]):
         query = re.search(r"recherche sur Youtube (.+)", command)
         if query != None:
             youtube(query.group(1))
-        return
+        return 
 
     if any(keyword in command for keyword in data["recherche rapide"]):
         print("recherche rapide")
@@ -160,7 +177,7 @@ def process_command(command, data, answer, id_user):
                 get_event("day", today.strftime("%d") , today.strftime("%m"))
                 return
             if "description" in command:
-                speak("Quel est le nom de l'événement?")
+                speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["name"])
                 name = listen()
                 get_event("name", name)
                 return
@@ -230,7 +247,7 @@ def get_hour():
         print(now)
         current_time = now.strftime("%H:%M")
         print(current_time)
-        speak(f"Il est {current_time}")
+        return f"Il est {current_time}"
     except Exception as e:
         print(f"get_hour error: {e}")
 
@@ -276,7 +293,8 @@ def get_weather():
             
             # To translate:
             description_trans= translator.translate(desc, src='en', dest='fr')
-            speak(f"Aujourd'hui, à {city}, il fait {temp} degrées, mais le ressenti est de{real_temp} degrées. Le climat est {description_trans.text}")
+            sentence = f"Aujourd'hui, à {city}, il fait {temp} degrées, mais le ressenti est de{real_temp} degrées. Le climat est {description_trans.text}"
+            return sentence
     except Exception as e:
         print (f"get_weather error: {e}")
 
@@ -303,8 +321,7 @@ def do_fast_research(command):
                 search(query.group(1))
                 speak(f"Voici les résultats pour {query.group(1)}")
     else:
-        #TODO: a mettre dans le json
-        speak("Je n'ai pas compris votre demande")
+        speak(read_text_from_json(PATH_ANSWER_JSON)["failure"])
 
 def search(query):
     """
@@ -333,9 +350,10 @@ def get_weather_at(city):
             temp = weather["temp"]
             desc = data["weather"][0]["description"]
             description = translator.translate(desc, src='en', dest='fr')
-            speak(f"La température à {city} est de {temp} degrés Celsius, avec {description.text}")
+            sentence = f"La température à {city} est de {temp} degrés Celsius, avec {description.text}"
         else:
-            speak(f"Je n'ai pas pu trouver la météo pour {city}")
+            sentence = f"Je n'ai pas pu trouver la météo pour {city}"
+            return sentence
     except Exception as e:
         speak(f"Je n'ai pas pu récupérer les données météos. Erreur {str(e)}")
 
@@ -466,13 +484,16 @@ def add_event():
     None 
     
     """
-    speak("Quand a lieu l'événement?")
+    #Ask the date:
+    speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["when"])
     date = listen()
     if "le" in date or "the" in date:
         _,day, month = date.split()
     else:
         day, month = date.split()
-    speak("A quel heure a lieu l'événement?")
+
+    # At what hour is the event?
+    speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["time"]["what time?"])
     match = None
     while match == None:
         hour_and_minute = listen()
@@ -481,21 +502,27 @@ def add_event():
             hour = match.group(1)
             minute = match.group(2)
         else:
-            speak("Je n'ai pas compris l'heure, Veuillez redire l'heure")
-    speak("Combien de temps dure l'événement en heure?")
+            speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["time"]["fail"])
+
+    # Duration of the event in hours:
+    speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["duration"]["what duration"])
     duration = None
     duration = listen()
     while duration == None:
-        speak("Je n'ai pas compris, veuillez répéter.")
+        speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["duration"]["fail"])
         duration = listen()
-    speak("Quelle est l'importance de l'événement? faible, modéré, important ou critique")
+
+    # Importance of the event:
+    speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["importance"]["what importance"])
     importance = None
     importance = listen()
     while importance not in ["faible", "modéré", "important", "critique"]:
-        speak("Je n'ai pas compris, veuillez répéter")
+        speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["importance"]["fail"])
         importance = listen()
         print(importance)
-    speak("Quelle est le nom de l'événement?")
+
+    # Name of the event:
+    speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["name"])
     name = listen()
 
     # All are string, we need to cast before going in DB:
@@ -652,3 +679,6 @@ def get_event(param, value1, value2= None):
                 12: "décembre" 
             }
             speak(f"Vous avez l'événement {result[0]}, d'importance {importance_dic_reverse.get(result[5])}, prévu le {result[3]} {month_dic_reverse.get(result[4])} a {result[1]} heure {result[2]}")
+
+if __name__=="__main__":
+    app.run(debug= True)
