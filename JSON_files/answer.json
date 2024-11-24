@@ -1,0 +1,74 @@
+{
+    "presentation":
+    [
+        "Je suis JARVIS, votre assistant personnel. J'ai ete conçu pour vous aider dans votre quotidien. n'hesitez vous à me demander de l'aide!"
+    ],
+    "veille":
+    [
+        "Je vais mettre en veille, n hesitez pas a me reveiller"
+    ],
+    "recherche rapide":
+    {
+        "success":
+        [ 
+            "Voici les informations que j'ai trouvé"
+        ],
+        "failure":
+        [
+            "Je n'ai pas trouvé d'information a ce sujet. Souhaitez vous une recherche plus approfondi?"
+        ]
+    },
+    "events":
+    {
+        "when":
+        [
+            "Quand a lieu l'événement?"
+        ],
+        "time":
+        {
+            "what time?":
+            [
+                "A quel heure a lieu l'événement?"
+            ],
+            "fail":
+            [
+                "Je n'ai pas compris, Veuillez répéter"
+            ]
+
+        },
+        "duration":
+        {
+            "what duration":
+            [
+                "Combien de temps dure l'événement en heure?"
+            ],
+            "fail":[
+                "Je n'ai pas compris, Veuillez répéter"
+            ]
+        }, 
+        "importance":
+        {
+            "what importance":
+            [
+                "Quelle est l'importance de l'événement? faible, modéré, important ou critique"
+            ],
+            "fail":[
+                "Je n'ai pas compris, Veuillez répéter"
+            ]
+        },
+        "name":
+        [
+            "Quelle est le nom de l'événement?"
+        ]
+    },
+    "history":
+    {
+        "success":[
+            "Cette requete à été faite"
+        ]
+    },
+    "failure":
+    [
+        "Je n'ai pas compris votre demande"
+    ]
+}

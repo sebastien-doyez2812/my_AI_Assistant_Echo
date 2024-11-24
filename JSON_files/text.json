@@ -1,0 +1,83 @@
+{
+    "salutation":[
+        "bonjour",
+        "salut",
+        "allo",
+        "yo"
+    ],
+    "veille": [
+        "dodo",
+        "veille",
+        "arret"
+    ],
+    "meteo" : [
+        "temps",
+        "météo",
+        "climat",
+        "température"
+    ],
+    "heure":
+    [
+        "quelle heure est-il",
+        "donner l'heure"
+    ],
+    "presentation":
+    [
+        "qui es-tu",
+        "Comment tu t'appelles?",
+        "Comment t'appelles tu?",
+        " présentes-toi"
+    ],
+    "localisation":
+    [
+        "où sommes-nous",
+        "localisation"
+    ],
+    "recherche rapide":
+    [
+        "recherche rapide",
+        "qu'est ce",
+        "recherche rapidement"
+    ],
+    "recherche":
+    [
+        "cherche sur internet",
+        "cherche",
+        "google",
+        "internet"
+    ],
+    "youtube":
+    [
+        "YouTube",
+        "recherche sur YouTube"
+    ],
+    "musique":
+    [   
+        "Joue de la musique",
+        "musique",
+        "son"
+    ],
+    "historique":
+    [
+        "historique",
+        "mémoire",
+        "memoire",
+        "requète",
+        "contenant"
+    ],
+    "event":
+    [
+        "événement",
+        "événements",
+        "event",
+        "events"
+    ],
+    "AI":
+    {
+        "weather":
+        [
+            "habillé en fonction du temps",
+            "comment s'habiller"
+        ]
+    }
+}
