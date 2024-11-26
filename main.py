@@ -22,12 +22,12 @@ def main():
 
     pygame.display.flip()
     while(True):
+        # Clear the screen:
+        clear_screen(screen)
+        pygame.display.flip()
+
         command = listen()
-
         if command:
-            # Clear the screen:
-            clear_screen(screen)
-
             # Get the sentence, display on the GUI
             sentence = process_command(command,data,answer, ID_USER)
             sentence_to_display = append_n_to_display(sentence)

@@ -105,12 +105,13 @@ def process_command(command, data, answer, id_user):
     if any(keyword in command for keyword in data["presentation"]):
         # TODO: to delete
         #speak(answer["presentation"])
-        return answer["presentation"]
+        return answer["presentation"][0]
 
     if  any(keyword in command for keyword in data["veille"]):
         #TODO to delete
         #speak(answer["veille"])
-        return answer["veille"]
+        #TODO: faire un mode veille
+        return answer["veille"][0]
 
     # Basic fonctionnalities:
     # What time is it?
@@ -146,17 +147,17 @@ def process_command(command, data, answer, id_user):
         query = re.search(r"recherche sur Youtube (.+)", command)
         if query != None:
             youtube(query.group(1))
-        return 
+        return "Ouverture de Youtube"
 
     if any(keyword in command for keyword in data["recherche rapide"]):
         print("recherche rapide")
-        do_fast_research(command)
-        return
+        sentence = do_fast_research(command)
+        return sentence 
     
     if any(keyword in command for keyword in data["recherche"]):
         query = re.search(r"cherche (.+)", command) 
         search(query.group(1))
-        return
+        return sentence
     
     # Functions with the database:
     if any(keyword in command for keyword in data["musique"]):
@@ -167,7 +168,7 @@ def process_command(command, data, answer, id_user):
         if "ajoute" in command:
             print(1)
             add_event()
-            return
+            return "événement ajouté"
         if "ai-je" in command:
             print(2)
             # TODO: a améliorer dans le futur:
@@ -312,16 +313,17 @@ def do_fast_research(command):
         print(f"{query.group(1)}")
         if page.exists():
             speak(read_text_from_json(PATH_ANSWER_JSON)["recherche rapide"]["success"][0])
-            speak(f"{page.summary[:]}")
+            sentence = (f"{page.summary[0:1000]}")
         else:
             speak(read_text_from_json(PATH_ANSWER_JSON)["recherche rapide"]["failure"][0])
             command = listen()
 
             if "oui" in command:
                 search(query.group(1))
-                speak(f"Voici les résultats pour {query.group(1)}")
+                sentence = f"Voici les résultats pour {query.group(1)}"
     else:
-        speak(read_text_from_json(PATH_ANSWER_JSON)["failure"])
+        sentence = read_text_from_json(PATH_ANSWER_JSON)["failure"]
+    return sentence
 
 def search(query):
     """
@@ -332,7 +334,9 @@ def search(query):
     """
     url = f"https://www.google.com/search?q={query}"
     webbrowser.open(url)
-    speak(f"Voici les résultats pour {query} sur Google.")
+    sentence = f"Voici les résultats pour {query} sur Google."
+    return sentence
+
 
 def get_weather_at(city):
     """
@@ -678,7 +682,7 @@ def get_event(param, value1, value2= None):
                 11: "novembre" ,
                 12: "décembre" 
             }
-            speak(f"Vous avez l'événement {result[0]}, d'importance {importance_dic_reverse.get(result[5])}, prévu le {result[3]} {month_dic_reverse.get(result[4])} a {result[1]} heure {result[2]}")
-
+            sentence = f"Vous avez l'événement {result[0]}, d'importance {importance_dic_reverse.get(result[5])}, prévu le {result[3]} {month_dic_reverse.get(result[4])} a {result[1]} heure {result[2]}"
+    return sentence
 if __name__=="__main__":
     app.run(debug= True)
