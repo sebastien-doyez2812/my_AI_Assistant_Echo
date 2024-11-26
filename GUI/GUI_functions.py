@@ -124,7 +124,7 @@ def meteo(screen):
         desc = data["weather"][0]["description"]
         icon_weather =""
         
-        if desc == 'broken clouds':
+        if desc == 'broken clouds' or desc == 'few clouds':
             icon_weather = "sun_cloud.png"
         elif desc == 'clouds' or desc == 'overcast clouds':    
             icon_weather = "clouds.png"
