@@ -22,20 +22,22 @@ def main():
 
     pygame.display.flip()
     while(True):
-        # Clear the screen:
-        clear_screen(screen)
-        pygame.display.flip()
-
-        command = listen()
-        if command:
-            # Get the sentence, display on the GUI
-            sentence = process_command(command,data,answer, ID_USER)
-            sentence_to_display = append_n_to_display(sentence)
-            display_sentence(sentence_to_display, font=font, screen=screen)
+        try:
+            # Clear the screen:
+            clear_screen(screen)
             pygame.display.flip()
 
-            speak(sentence)
+            command = listen()
+            if command:
+                # Get the sentence, display on the GUI
+                sentence = process_command(command,data,answer, ID_USER)
+                sentence_to_display = append_n_to_display(sentence)
+                display_sentence(sentence_to_display, font=font, screen=screen)
+                pygame.display.flip()
 
+                speak(sentence)
+        except Exception as e:
+            print(e)
 
 
 main()

@@ -126,6 +126,7 @@ def process_command(command, data, answer, id_user):
         if query == None:
             sentence = get_weather()
         else:
+            print(query)
             sentence = get_weather_at(query.group(1))
         
         # TODO: to delete
