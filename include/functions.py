@@ -69,7 +69,6 @@ def process_command(command, data, answer, id_user):
 
     sentence = ""
     # Basic interaction:
-    print(command)
     add_request(command, id_user)
 
     if any(keyword in command for keyword in data["historique"]):
@@ -162,15 +161,12 @@ def process_command(command, data, answer, id_user):
     # Functions with the database:
     if any(keyword in command for keyword in data["musique"]):
         play_music()
-        return
+        return "Lancement d'une de vos musiques favorites."
     if any(keyword in command for keyword in data["event"]):
-        print(command) #TODO delete
         if "ajoute" in command:
-            print(1)
             add_event()
             return "événement ajouté"
         if "ai-je" in command:
-            print(2)
             # TODO: a améliorer dans le futur:
             # mettre dans le json
             if "aujourd'hui" in command:
@@ -245,9 +241,7 @@ def get_hour():
     """
     try:
         now = datetime.now()
-        print(now)
         current_time = now.strftime("%H:%M")
-        print(current_time)
         return f"Il est {current_time}"
     except Exception as e:
         print(f"get_hour error: {e}")
@@ -306,11 +300,10 @@ def do_fast_research(command):
     ARGS: 
         the command( what JARVIS heard)
     """
+    sentence = ""
     query = re.search(r"recherche rapide sur (.+)", command) or re.search(r"Qu'est ce qu'un (.+)", command) or re.search(r"Qu'est ce qu'une (.+)", command) or re.search(r"Recherche rapidement (.+)", command)
-    print(query)
     if query != None:
         page = wiki.page(query.group(1))
-        print(f"{query.group(1)}")
         if page.exists():
             speak(read_text_from_json(PATH_ANSWER_JSON)["recherche rapide"]["success"][0])
             sentence = (f"{page.summary[0:1000]}")
@@ -383,7 +376,6 @@ def play_music():
         index = random.randint(0,10)
         jarvis_cursor.execute(f"SELECT link FROM musique WHERE id = {index}")
         url = jarvis_cursor.fetchall()[0][0]
-        print(url)
         webbrowser.open(url)
     except Exception as e:
         print (f"play_music ERROR: {e}")
@@ -462,9 +454,7 @@ def find_when(keyword):
     try:
         keyword = "%"+keyword+"%"
         sql_request = f"SELECT day, hour, minute FROM requests WHERE command LIKE '{keyword}'"
-        print(sql_request)
         jarvis_cursor.execute(sql_request)
-        print(jarvis_cursor.fetchall())
         day, hour, minute = []
         day.append(jarvis_cursor.fetchall()[0][0])
         hour.append(jarvis_cursor.fetchall()[1])
@@ -523,7 +513,6 @@ def add_event():
     while importance not in ["faible", "modéré", "important", "critique"]:
         speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["importance"]["fail"])
         importance = listen()
-        print(importance)
 
     # Name of the event:
     speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["name"])
@@ -538,7 +527,6 @@ def add_event():
     except Exception as e:
         print(f"[process: events] Error: {e}")
         return
-    print(name, hour,minute,day,month,duration,importance)
     add_events_in_database(name, hour, minute, day, month, duration, importance)
 
 def add_events_in_database(name, hour, minute, day, month, duration, importance):
@@ -622,7 +610,6 @@ def add_events_in_database(name, hour, minute, day, month, duration, importance)
     request_for_id = "SELECT COUNT(*) FROM `events` WHERE 1"
     jarvis_cursor.execute(request_for_id)
     id_event = jarvis_cursor.fetchall()[0][0]
-    print(id_event)
 
     # Insert the event:
     request_insert=(f"INSERT INTO `events`(`hour`, `minute`, `day`, `month`, `duration`, `description`, `importance`, `id`) VALUES ('{hour}','{minute}','{day}','{id_month}','{duration}','{name}','{importance_id}','{id_event}')")
@@ -651,12 +638,9 @@ def get_event(param, value1, value2= None):
     if param == "day":
         request = f"SELECT description, hour, minute, day, month, importance FROM `events` WHERE day = {value1} AND month = {value2}"
     if request:
-        print(request)
         jarvis_cursor.execute(request)
         result = jarvis_cursor.fetchall()
-        print(result)
         result = result[0]
-        print(result)
         if result == []:
             speak(" il n'y a pas d'événements prévu pour ce jour")
         else:
@@ -684,5 +668,3 @@ def get_event(param, value1, value2= None):
             }
             sentence = f"Vous avez l'événement {result[0]}, d'importance {importance_dic_reverse.get(result[5])}, prévu le {result[3]} {month_dic_reverse.get(result[4])} a {result[1]} heure {result[2]}"
     return sentence
-if __name__=="__main__":
-    app.run(debug= True)
