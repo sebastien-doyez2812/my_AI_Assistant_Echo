@@ -114,7 +114,6 @@ def meteo(screen):
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key_meteo}&units=metric"
     response = requests.get(url)
     data = response.json()
-    print(data)
     if data["cod"] != "404":
 
         # Get the data:
@@ -135,7 +134,6 @@ def meteo(screen):
         elif desc == "rain":
             icon_weather = "rain.png"
         else:
-            print(desc)
             return
     
         frame_weather_icone = pygame.image.load(PATH_IMAGE + icon_weather)

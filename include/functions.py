@@ -14,6 +14,7 @@ import wikipediaapi
 from datetime import datetime
 from googletrans import Translator
 from include.header import *
+from pygame import mixer
 
 ####################################
 ##      STANDARD FUNCTIONS        ##
@@ -67,6 +68,22 @@ def process_command(command, data, answer, id_user):
 
     """
 
+    month_dic = {
+        "Jan": "janvier",
+        "Feb" : "février",
+        "Mar": "mars",
+        "Apr" : "avril",
+        "May" : "mai",
+        "Jun" : "juin",
+        "Jul" :"juillet",
+        "Aug" : "aout",
+        "Sep" : "septembre",
+        "Oct" : "octobre",
+        "Nov" : "novembre",
+        "Dec" : "décembre"
+    }
+
+
     sentence = ""
     # Basic interaction:
     add_request(command, id_user)
@@ -85,10 +102,14 @@ def process_command(command, data, answer, id_user):
         if word_to_find != None:
             
             print(f"on doit trouver: {word_to_find}")
-            day, hour, minute = find_when(word_to_find)
+            month_day, hour, minute = find_when(word_to_find)
+            print(month_day[0:3])
+            month = month_dic.get(month_day.split(':')[0])
+            day = month_day.split(':')[1]
+
             speak(read_text_from_json(PATH_ANSWER_JSON)["history"]["success"])
             for i in range(len(day)):
-                sentence = f" le {day}, a {hour} heure et {minute} minutes."
+                sentence = f" le {day} {month}, a {hour} heure et {minute} minutes."
                 #TODO delete 
                 #speak(sentence)
         else: 
@@ -96,7 +117,7 @@ def process_command(command, data, answer, id_user):
         return sentence
     
     if any(keyword in command for keyword in data["salutation"]):
-        sentence = f"Bonjour {USER}, Comment puis je vous aider aujourd'hui"
+        sentence = f"Bonjour {USER},\n Comment puis je vous aider aujourd'hui?"
         #TODO: to delete
         #speak(sentence)
         return sentence
@@ -126,7 +147,6 @@ def process_command(command, data, answer, id_user):
         if query == None:
             sentence = get_weather()
         else:
-            print(query)
             sentence = get_weather_at(query.group(1))
         
         # TODO: to delete
@@ -161,8 +181,14 @@ def process_command(command, data, answer, id_user):
     
     # Functions with the database:
     if any(keyword in command for keyword in data["musique"]):
-        play_music()
-        return "Lancement d'une de vos musiques favorites."
+        query = re.search(r"(.+) en ligne", command)
+        if query != None:
+            play_music_online()
+        else:
+            print("mode offline")
+            play_music_offline()
+            print("on est sorti")
+        return "J'ai arrété la musique"
     if any(keyword in command for keyword in data["event"]):
         if "ajoute" in command:
             add_event()
@@ -372,14 +398,77 @@ def youtube(request):
 ################################################
 
 # Play musics:
-def play_music():
+def play_music_online():
     try:
-        index = random.randint(0,10)
+        #TODO: mettre le 2 dans un JSON
+        index = random.randint(0,2)
         jarvis_cursor.execute(f"SELECT link FROM musique WHERE id = {index}")
         url = jarvis_cursor.fetchall()[0][0]
         webbrowser.open(url)
     except Exception as e:
         print (f"play_music ERROR: {e}")
+
+def play_song(path_on_pc):
+    """
+    DEF:
+    ---
+    Function used in play_music_offline,
+    ARGS:
+    ----
+    path_on_pc: path of a song on the computer
+    """
+    mixer.music.stop()
+    mixer.music.load(path_on_pc)
+    mixer.music.play()
+
+def play_music_offline():
+    try:
+        #TODO mettre le 2 dans un json:
+
+        # Take a random number, and go to the music with this id
+        index = random.randint(1,2)
+        jarvis_cursor.execute(f"SELECT path FROM musique WHERE id = {index}")
+        path = jarvis_cursor.fetchall()[0][0]
+
+        # Creation of a memory for the previous song
+        path_mem = path
+        play_song(path)
+        speak("Je joue votre musique, utilisez les commandes vocales pour changer")
+        while True:
+
+            command = listen()
+            if command != None:
+                print(f"Commande reçue dans play offline: {command}")
+                if "suivant" in command.lower() or "change" in command.lower():
+                    # Chose another song:
+                    index = random.randint(1,2)
+                    print(index)
+                    jarvis_cursor.execute(f"SELECT path FROM musique WHERE id = {index}")
+                    path_mem = path
+                    path = jarvis_cursor.fetchall()[0][0]
+
+                    # Play the song
+                    play_song(path)
+                    speak("Changement de musique")
+                elif "précédent" in command.lower() or "retour" in command.lower():
+                    play_song(path_mem)
+                    speak("Retour a la musique précédente")
+                elif "pause" in command.lower():
+                    mixer.music.pause()
+                    speak("Musique mise en pause")
+                elif "reprend" in command.lower() or "continue" in command.lower():
+                    mixer.music.unpause()
+                    speak("Musique reprise")
+                elif "stop" in command.lower() or "arrête" in command.lower():
+                    mixer.music.stop()
+                    return "Musique arrêtée"
+    except Exception as e:
+        mixer.music.stop()
+        print(e)
+
+
+
+
 
 def find_phone(name):
     """
@@ -453,14 +542,12 @@ def find_when(keyword):
         keyword: string, word inside a request we want to find
     """
     try:
-        keyword = "%"+keyword+"%"
+        #keyword = "%"+keyword+"%"
         sql_request = f"SELECT day, hour, minute FROM requests WHERE command LIKE '{keyword}'"
+        print(sql_request)
         jarvis_cursor.execute(sql_request)
-        day, hour, minute = []
-        day.append(jarvis_cursor.fetchall()[0][0])
-        hour.append(jarvis_cursor.fetchall()[1])
-        minute.append(jarvis_cursor.fetchall()[2])
-        return (day, hour, minute)
+        result = jarvis_cursor.fetchall()
+        return (result[0][0], result[0][1], result[0][2])
     except Exception as e:
         print(f"find_when ERROR: {e}")
 
@@ -580,7 +667,6 @@ def add_events_in_database(name, hour, minute, day, month, duration, importance)
 
     # Test and affectation:
     id_month = month_dic.get(month)
-    print(id_month)
     if id_month == None:
         print(f"[add_events_in_database] Error: month not in dictionnary")
         return
