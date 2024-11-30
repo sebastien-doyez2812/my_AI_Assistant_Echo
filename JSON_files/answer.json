@@ -70,5 +70,12 @@
     "failure":
     [
         "Je n'ai pas compris votre demande"
-    ]
+    ],
+    "weather":
+    {
+        "date":
+        [
+            "Vous souhaitez la météo pour quelle date?"
+        ]
+    }
 }

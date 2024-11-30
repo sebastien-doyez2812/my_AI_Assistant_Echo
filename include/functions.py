@@ -7,7 +7,7 @@ import pyttsx3
 import speech_recognition as sr
 import webbrowser
 import webbrowser
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import json
 import requests
 import wikipediaapi
@@ -15,6 +15,7 @@ from datetime import datetime
 from googletrans import Translator
 from include.header import *
 from pygame import mixer
+import unicodedata
 
 ####################################
 ##      STANDARD FUNCTIONS        ##
@@ -144,13 +145,36 @@ def process_command(command, data, answer, id_user):
     # What's the weather?
     if any(keyword in command for keyword in data["meteo"]):
         query = re.search(r"météo pour (.+)", command) or re.search(r"météo à (.+)", command)
-        if query == None:
-            sentence = get_weather()
+        if query != None:
+            city = query.group(1).strip()
         else:
-            sentence = get_weather_at(query.group(1))
+            city = get_localisation()
         
-        # TODO: to delete
-        #speak(sentence)
+        print(f"ville = {city}")
+        speak(read_text_from_json(PATH_ANSWER_JSON)["weather"]["date"])
+        date_listen = listen()
+        today = date.today()
+        if "aujourd'hui" in date_listen:
+            day = today
+        elif "demain" in date_listen:
+            day = today + timedelta(days=1)
+        elif "dans" in date_listen:
+            match = re.search(r"\d+", date_listen)
+            if match:
+                day = today + timedelta(days = int(match.group()))
+        else: 
+            #TODO: To improve!!!!
+            # TODO a ajouter dans le JSON
+            speak("je n'ai pas compris la date...")
+            speak(" donnez moi le jour que vous désirez (chiffre):")
+            dd = int(listen())
+            speak("donnez moi le mois (chiffre uniquement)")
+            mm = int(listen())
+            speak( "et l'année?")
+            aaaa = int(listen())
+            day = f"{aaaa}-{mm}-{dd}"
+        print(day)
+        sentence = get_weather2(remove_accents(city), day)
         return sentence
 
     # Where are we?
@@ -185,9 +209,7 @@ def process_command(command, data, answer, id_user):
         if query != None:
             play_music_online()
         else:
-            print("mode offline")
             play_music_offline()
-            print("on est sorti")
         return "J'ai arrété la musique"
     if any(keyword in command for keyword in data["event"]):
         if "ajoute" in command:
@@ -212,7 +234,7 @@ def process_command(command, data, answer, id_user):
     #######################################
 
     if any(keyword in command for keyword in data["AI"]["weather"]):
-        get_weather()
+        get_weather() 
 
     
 
@@ -256,6 +278,15 @@ def read_text_from_json(path):
     return data
 
 
+def remove_accents(input_str):
+    """
+    DEF:
+    ----
+    Remove the é of a Word, useful for French and for the Weather
+    """
+    normalized_str = unicodedata.normalize('NFD', input_str)
+    return ''.join(c for c in normalized_str if unicodedata.category(c) != 'Mn')
+
 
 
 # Basics fonctionnalities:
@@ -286,8 +317,8 @@ def get_localisation():
         response = requests.get("https://ipinfo.io")
         data = response.json()
         city = data["city"]
-        region = data["region"]
-        return(city, region)
+        #region = data["region"]
+        return(city)
     except Exception as e:
         print(f"get_localisation error: {e}")
 
@@ -315,10 +346,61 @@ def get_weather():
             
             # To translate:
             description_trans= translator.translate(desc, src='en', dest='fr')
-            sentence = f"Aujourd'hui, à {city}, il fait {temp} degrées, mais le ressenti est de{real_temp} degrées. Le climat est {description_trans.text}"
+            sentence = f"Aujourd'hui, à {city}, il fait {temp} degrées, mais le ressenti est de {real_temp} degrées. Le climat est {description_trans.text}"
             return sentence
     except Exception as e:
         print (f"get_weather error: {e}")
+
+
+
+def get_weather2(city,date):
+    """
+    DEF:
+    ----
+    Get the weather for a place, for a date.
+
+    ARGS:
+    -----
+    city: string, place where we want to know the weather
+    date: string: AAAA-MM-DD
+
+    RETURN:
+    ------
+    sentence JARVIS will say    
+    """
+
+    try: 
+        # Get the API:
+        api_key = read_text_from_json(PATH_PARAMETERS)["adv_api_meteo"][0]
+        # Do a request:
+        url = f"http://api.weatherapi.com/v1/forecast.json?key={api_key}&q={city}&days=10&aqi=no&alerts=no"
+        rep = requests.get(url)
+        data = rep.json()
+
+        # if the request is successful:
+        if rep.status_code == 200: # 200 => OK
+            forecast_days = data['forecast']['forecastday']
+
+            # Find the date we want:
+            for day in forecast_days:
+                print(f"{day['date']} vs {date}")
+                if str(day['date']) == str(date):
+                    condition = day['day']['condition']['text']
+                    temp_max = day['day']['maxtemp_c']
+                    temp_min = day['day']['mintemp_c']
+                    # TODO: a ameliorer, peut etre mettre le texte dans un JSON???
+                    return (f"Voici mes prévisions pour {city} le {date} : {condition}. "
+                            f"Température entre {temp_min} degrés et {temp_max} degrés.")
+            return f"Désolé, je n'ai pas trouvé de prévisions pour la date {date}."
+        else:
+            return f"Erreur API : {data['error']['message']}"
+    except Exception as e:
+        print(e)
+
+
+
+
+
 
 def do_fast_research(command):
     """
@@ -438,11 +520,9 @@ def play_music_offline():
 
             command = listen()
             if command != None:
-                print(f"Commande reçue dans play offline: {command}")
                 if "suivant" in command.lower() or "change" in command.lower():
                     # Chose another song:
                     index = random.randint(1,2)
-                    print(index)
                     jarvis_cursor.execute(f"SELECT path FROM musique WHERE id = {index}")
                     path_mem = path
                     path = jarvis_cursor.fetchall()[0][0]
