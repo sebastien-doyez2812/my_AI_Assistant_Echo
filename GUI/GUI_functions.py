@@ -28,11 +28,8 @@ def append_n_to_display(sentence):
     words = sentence.split()
     for i in range (len(words)):
         sentence_displayed += " " + words[i]
-        print(sentence_displayed)
-        print(i)
         if i % 5 == 0 and i != 0: 
             sentence_displayed += "\n"
-            print ("AJOUT!!!")
     return sentence_displayed
 
 def display_sentence(sentence_n, font, screen):
