@@ -9,7 +9,7 @@ def main():
     # Gui init:
     pygame.init()
 
-    screen = pygame.display.set_mode((1500, 800))#, pygame.FULLSCREEN) 
+    screen = pygame.display.set_mode((0,0), pygame.FULLSCREEN)#(1500, 800))#, pygame.FULLSCREEN) 
     pygame.display.set_caption("JARVIS")
     font = pygame.font.Font(None, 45)
     clear_screen(screen)

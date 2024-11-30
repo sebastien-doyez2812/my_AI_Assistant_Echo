@@ -179,8 +179,8 @@ def process_command(command, data, answer, id_user):
 
     # Where are we?
     if any(keyword in command for keyword in data["localisation"]):
-        city, region = get_localisation()
-        sentence = f"Nous sommes a {city}, {region}"
+        city = get_localisation()
+        sentence = f"Nous sommes a {city}"
         
         # TODO: to delete
         #speak(sentence)
@@ -388,6 +388,10 @@ def get_weather2(city,date):
                     condition = day['day']['condition']['text']
                     temp_max = day['day']['maxtemp_c']
                     temp_min = day['day']['mintemp_c']
+                    print(condition)
+                    if str(condition) == "Overcast ":
+                        condition = "ciel couvert"
+                    #TODO add translation???
                     # TODO: a ameliorer, peut etre mettre le texte dans un JSON???
                     return (f"Voici mes prévisions pour {city} le {date} : {condition}. "
                             f"Température entre {temp_min} degrés et {temp_max} degrés.")
@@ -696,6 +700,30 @@ def add_event():
         print(f"[process: events] Error: {e}")
         return
     add_events_in_database(name, hour, minute, day, month, duration, importance)
+
+
+# TODO: adding a functionality of translation on the GUI
+def translate(texte):#, source_lang='en', target_lang='fr'):
+    """
+    DEF:
+    ----
+    Translate a text in another language
+    
+    ARGS:
+    -----
+    text: string
+    source_lang: (otpionnal) 2 chars
+    target_lang: (optionnal) 2 chars
+    
+    RETURN:
+    -------
+    return a translation of the text
+    """
+    print(texte)
+    traducteur = Translator()
+    traduction = traducteur.translate(texte, src='en', dest='fr')
+    return traduction.text
+
 
 def add_events_in_database(name, hour, minute, day, month, duration, importance):
     """
