@@ -7,14 +7,17 @@ import pyttsx3
 import speech_recognition as sr
 import webbrowser
 import webbrowser
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import json
 import requests
 import wikipediaapi
 from datetime import datetime
-from googletrans import Translator
+#from googletrans import Translator
 from include.header import *
-
+from pygame import mixer
+import unicodedata
+from AI.tools.llms import llm as llm
+from AI.tools.llms import agent as agent
 ####################################
 ##      STANDARD FUNCTIONS        ##
 ####################################         
@@ -25,7 +28,7 @@ engine.setProperty('volume', 1.5)
 engine.setProperty('rate', 200)
 
 # To translate in French:
-translator = Translator()
+#translator = Translator()
 # Fast research:
 user_agent_wikipedia = "JarvisPython/1.0 (https://github.com/sebastien-doyez2812/AI-projects/AI_ChatBot)"
 wiki = wikipediaapi.Wikipedia(user_agent_wikipedia, 'fr')
@@ -67,9 +70,41 @@ def process_command(command, data, answer, id_user):
 
     """
 
+    month_dic = {
+        "Jan": "janvier",
+        "Feb" : "février",
+        "Mar": "mars",
+        "Apr" : "avril",
+        "May" : "mai",
+        "Jun" : "juin",
+        "Jul" :"juillet",
+        "Aug" : "aout",
+        "Sep" : "septembre",
+        "Oct" : "octobre",
+        "Nov" : "novembre",
+        "Dec" : "décembre"
+    }
+
+
     sentence = ""
     # Basic interaction:
     add_request(command, id_user)
+
+    if any(keyword in command for keyword in data["salutation"]):
+
+        prompt = read_text_from_json(PATH_PROMPTS)["salutation"].format(USER = USER)
+        sentence = llm.llm.invoke(prompt)
+        return sentence
+    
+    if any(keyword in command for keyword in data["presentation"]):
+        # TODO: to delete
+        sentence = llm.llm.invoke(read_text_from_json(PATH_PROMPTS)["presentation"])
+        return sentence
+
+    if  any(keyword in command for keyword in data["veille"]):
+        #TODO to delete
+        sentence = llm.invoke(read_text_from_json(PATH_PROMPTS)["sleep"])
+        return sentence
 
     if any(keyword in command for keyword in data["historique"]):
         word_to_find = None
@@ -85,61 +120,66 @@ def process_command(command, data, answer, id_user):
         if word_to_find != None:
             
             print(f"on doit trouver: {word_to_find}")
-            day, hour, minute = find_when(word_to_find)
+            month_day, hour, minute = find_when(word_to_find)
+            print(month_day[0:3])
+            month = month_dic.get(month_day.split(':')[0])
+            day = month_day.split(':')[1]
+
             speak(read_text_from_json(PATH_ANSWER_JSON)["history"]["success"])
             for i in range(len(day)):
-                sentence = f" le {day}, a {hour} heure et {minute} minutes."
-                #TODO delete 
-                #speak(sentence)
+                sentence = f" le {day} {month}, a {hour} heure et {minute} minutes."
         else: 
             print("find_word ERROR: unable to understand the word")
         return sentence
     
-    if any(keyword in command for keyword in data["salutation"]):
-        sentence = f"Bonjour {USER}, Comment puis je vous aider aujourd'hui"
-        #TODO: to delete
-        #speak(sentence)
-        return sentence
-    
-    if any(keyword in command for keyword in data["presentation"]):
-        # TODO: to delete
-        #speak(answer["presentation"])
-        return answer["presentation"][0]
-
-    if  any(keyword in command for keyword in data["veille"]):
-        #TODO to delete
-        #speak(answer["veille"])
-        #TODO: faire un mode veille
-        return answer["veille"][0]
-
     # Basic fonctionnalities:
     # What time is it?
     if any(keyword in command for keyword in data["heure"]):
-        sentence = get_hour()
-        #TODO: to delete
-        #speak(sentence)
+        # I could use a AI agent, but the local LLM are not very good for that
+        hour = get_hour()
+        prompt = read_text_from_json(PATH_PROMPTS)["hour"].format(TIME = hour)
+        sentence = llm.llm.invoke(prompt)
         return sentence
 
     # What's the weather?
     if any(keyword in command for keyword in data["meteo"]):
         query = re.search(r"météo pour (.+)", command) or re.search(r"météo à (.+)", command)
-        if query == None:
-            sentence = get_weather()
+        if query != None:
+            city = query.group(1).strip()
         else:
-            print(query)
-            sentence = get_weather_at(query.group(1))
+            city = get_localisation()
         
-        # TODO: to delete
-        #speak(sentence)
+        print(f"ville = {city}")
+        speak(read_text_from_json(PATH_ANSWER_JSON)["weather"]["date"])
+        date_listen = listen()
+        today = date.today()
+        if "aujourd'hui" in date_listen:
+            day = today
+        elif "demain" in date_listen:
+            day = today + timedelta(days=1)
+        elif "dans" in date_listen:
+            match = re.search(r"\d+", date_listen)
+            if match:
+                day = today + timedelta(days = int(match.group()))
+        else: 
+            #TODO: To improve!!!!
+            # TODO a ajouter dans le JSON
+            speak("je n'ai pas compris la date...")
+            speak(" donnez moi le jour que vous désirez (chiffre):")
+            dd = int(listen())
+            speak("donnez moi le mois (chiffre uniquement)")
+            mm = int(listen())
+            speak( "et l'année?")
+            aaaa = int(listen())
+            day = f"{aaaa}-{mm}-{dd}"
+        print(day)
+        sentence = get_weather2(remove_accents(city), day)
         return sentence
 
     # Where are we?
     if any(keyword in command for keyword in data["localisation"]):
-        city, region = get_localisation()
-        sentence = f"Nous sommes a {city}, {region}"
-        
-        # TODO: to delete
-        #speak(sentence)
+        city = get_localisation()
+        sentence = f"Nous sommes a {city}"
         return sentence
     
     # Search on the web
@@ -151,18 +191,23 @@ def process_command(command, data, answer, id_user):
 
     if any(keyword in command for keyword in data["recherche rapide"]):
         print("recherche rapide")
-        sentence = do_fast_research(command)
+        sentence = llm.llm.invoke(f"résume ces résultats de recherche : {do_fast_research(command)}").replace("*", "")
         return sentence 
     
     if any(keyword in command for keyword in data["recherche"]):
         query = re.search(r"cherche (.+)", command) 
-        search(query.group(1))
+        sentence = search(query.group(1))
         return sentence
     
     # Functions with the database:
     if any(keyword in command for keyword in data["musique"]):
-        play_music()
-        return "Lancement d'une de vos musiques favorites."
+        query = re.search(r"(.+) en ligne", command)
+        if query != None:
+            play_music_online()
+        else:
+            play_music_offline()
+        return "J'ai arrété la musique"
+    
     if any(keyword in command for keyword in data["event"]):
         if "ajoute" in command:
             add_event()
@@ -180,13 +225,19 @@ def process_command(command, data, answer, id_user):
                 get_event("name", name)
                 return
 
-
     #######################################
     ##       AI Functionnalities         ##
     #######################################
+    if command == None:
+        return
+    if any(keyword in command for keyword in data["analyse"]):
+        res = agent.multi_agent_system.execute_task(command)
+        return res.get("output", "").replace("*", "")
+    else:
+        # Use the agent to have a reponse
+        return llm.llm.invoke(command)
 
-    if any(keyword in command for keyword in data["AI"]["weather"]):
-        get_weather()
+    
 
     
 
@@ -230,6 +281,15 @@ def read_text_from_json(path):
     return data
 
 
+def remove_accents(input_str):
+    """
+    DEF:
+    ----
+    Remove the é of a Word, useful for French and for the Weather
+    """
+    normalized_str = unicodedata.normalize('NFD', input_str)
+    return ''.join(c for c in normalized_str if unicodedata.category(c) != 'Mn')
+
 
 
 # Basics fonctionnalities:
@@ -243,7 +303,7 @@ def get_hour():
     try:
         now = datetime.now()
         current_time = now.strftime("%H:%M")
-        return f"Il est {current_time}"
+        return current_time
     except Exception as e:
         print(f"get_hour error: {e}")
 
@@ -260,8 +320,8 @@ def get_localisation():
         response = requests.get("https://ipinfo.io")
         data = response.json()
         city = data["city"]
-        region = data["region"]
-        return(city, region)
+        #region = data["region"]
+        return(city)
     except Exception as e:
         print(f"get_localisation error: {e}")
 
@@ -288,11 +348,66 @@ def get_weather():
             desc = data["weather"][0]["description"]
             
             # To translate:
-            description_trans= translator.translate(desc, src='en', dest='fr')
-            sentence = f"Aujourd'hui, à {city}, il fait {temp} degrées, mais le ressenti est de{real_temp} degrées. Le climat est {description_trans.text}"
+            description_trans= desc #translator.translate(desc, src='en', dest='fr')
+            sentence = f"Aujourd'hui, à {city}, il fait {temp} degrées, mais le ressenti est de {real_temp} degrées. Le climat est {description_trans.text}"
             return sentence
     except Exception as e:
         print (f"get_weather error: {e}")
+
+
+
+def get_weather2(city,date):
+    """
+    DEF:
+    ----
+    Get the weather for a place, for a date.
+
+    ARGS:
+    -----
+    city: string, place where we want to know the weather
+    date: string: AAAA-MM-DD
+
+    RETURN:
+    ------
+    sentence JARVIS will say    
+    """
+
+    try: 
+        # Get the API:
+        api_key = read_text_from_json(PATH_PARAMETERS)["adv_api_meteo"][0]
+        # Do a request:
+        url = f"http://api.weatherapi.com/v1/forecast.json?key={api_key}&q={city}&days=10&aqi=no&alerts=no"
+        rep = requests.get(url)
+        data = rep.json()
+
+        # if the request is successful:
+        if rep.status_code == 200: # 200 => OK
+            forecast_days = data['forecast']['forecastday']
+
+            # Find the date we want:
+            for day in forecast_days:
+                print(f"{day['date']} vs {date}")
+                if str(day['date']) == str(date):
+                    condition = day['day']['condition']['text']
+                    temp_max = day['day']['maxtemp_c']
+                    temp_min = day['day']['mintemp_c']
+                    print(condition)
+                    if str(condition) == "Overcast ":
+                        condition = "ciel couvert"
+                    #TODO add translation???
+                    # TODO: a ameliorer, peut etre mettre le texte dans un JSON???
+                    return (f"Voici mes prévisions pour {city} le {date} : {condition}. "
+                            f"Température entre {temp_min} degrés et {temp_max} degrés.")
+            return f"Désolé, je n'ai pas trouvé de prévisions pour la date {date}."
+        else:
+            return f"Erreur API : {data['error']['message']}"
+    except Exception as e:
+        print(e)
+
+
+
+
+
 
 def do_fast_research(command):
     """
@@ -332,30 +447,6 @@ def search(query):
     return sentence
 
 
-def get_weather_at(city):
-    """
-    Give us the weather at a specific place
-    
-    ARGS:
-        city: string
-    """
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={read_text_from_json(PATH_PARAMETERS)["api_meteo"][0]}&units=metric"
-    try: 
-        response = requests.get(url)
-        data = response.json()       
-        if data["cod"] != "404": #error code
-            weather = data["main"]
-            temp = weather["temp"]
-            desc = data["weather"][0]["description"]
-            description = translator.translate(desc, src='en', dest='fr')
-            sentence = f"La température à {city} est de {temp} degrés Celsius, avec {description.text}"
-        else:
-            sentence = f"Je n'ai pas pu trouver la météo pour {city}"
-            return sentence
-    except Exception as e:
-        speak(f"Je n'ai pas pu récupérer les données météos. Erreur {str(e)}")
-
-
 def youtube(request):
     """
     Research on Youtube
@@ -372,14 +463,75 @@ def youtube(request):
 ################################################
 
 # Play musics:
-def play_music():
+def play_music_online():
     try:
-        index = random.randint(0,10)
+        #TODO: mettre le 2 dans un JSON
+        index = random.randint(0,2)
         jarvis_cursor.execute(f"SELECT link FROM musique WHERE id = {index}")
         url = jarvis_cursor.fetchall()[0][0]
         webbrowser.open(url)
     except Exception as e:
         print (f"play_music ERROR: {e}")
+
+def play_song(path_on_pc):
+    """
+    DEF:
+    ---
+    Function used in play_music_offline,
+    ARGS:
+    ----
+    path_on_pc: path of a song on the computer
+    """
+    mixer.music.stop()
+    mixer.music.load(path_on_pc)
+    mixer.music.play()
+
+def play_music_offline():
+    try:
+        #TODO mettre le 2 dans un json:
+
+        # Take a random number, and go to the music with this id
+        index = random.randint(1,2)
+        jarvis_cursor.execute(f"SELECT path FROM musique WHERE id = {index}")
+        path = jarvis_cursor.fetchall()[0][0]
+
+        # Creation of a memory for the previous song
+        path_mem = path
+        play_song(path)
+        speak("Je joue votre musique, utilisez les commandes vocales pour changer")
+        while True:
+
+            command = listen()
+            if command != None:
+                if "suivant" in command.lower() or "change" in command.lower():
+                    # Chose another song:
+                    index = random.randint(1,2)
+                    jarvis_cursor.execute(f"SELECT path FROM musique WHERE id = {index}")
+                    path_mem = path
+                    path = jarvis_cursor.fetchall()[0][0]
+
+                    # Play the song
+                    play_song(path)
+                    speak("Changement de musique")
+                elif "précédent" in command.lower() or "retour" in command.lower():
+                    play_song(path_mem)
+                    speak("Retour a la musique précédente")
+                elif "pause" in command.lower():
+                    mixer.music.pause()
+                    speak("Musique mise en pause")
+                elif "reprend" in command.lower() or "continue" in command.lower():
+                    mixer.music.unpause()
+                    speak("Musique reprise")
+                elif "stop" in command.lower() or "arrête" in command.lower():
+                    mixer.music.stop()
+                    return "Musique arrêtée"
+    except Exception as e:
+        mixer.music.stop()
+        print(e)
+
+
+
+
 
 def find_phone(name):
     """
@@ -453,14 +605,12 @@ def find_when(keyword):
         keyword: string, word inside a request we want to find
     """
     try:
-        keyword = "%"+keyword+"%"
+        #keyword = "%"+keyword+"%"
         sql_request = f"SELECT day, hour, minute FROM requests WHERE command LIKE '{keyword}'"
+        print(sql_request)
         jarvis_cursor.execute(sql_request)
-        day, hour, minute = []
-        day.append(jarvis_cursor.fetchall()[0][0])
-        hour.append(jarvis_cursor.fetchall()[1])
-        minute.append(jarvis_cursor.fetchall()[2])
-        return (day, hour, minute)
+        result = jarvis_cursor.fetchall()
+        return (result[0][0], result[0][1], result[0][2])
     except Exception as e:
         print(f"find_when ERROR: {e}")
 
@@ -530,6 +680,29 @@ def add_event():
         return
     add_events_in_database(name, hour, minute, day, month, duration, importance)
 
+# TODO: adding a functionality of translation on the GUI
+def translate(texte):#, source_lang='en', target_lang='fr'):
+    """
+    DEF:
+    ----
+    Translate a text in another language
+    
+    ARGS:
+    -----
+    text: string
+    source_lang: (otpionnal) 2 chars
+    target_lang: (optionnal) 2 chars
+    
+    RETURN:
+    -------
+    return a translation of the text
+    """
+    print(texte)
+    #traducteur = Translator()
+    #traduction = traducteur.translate(texte, src='en', dest='fr')
+    #return traduction.text
+
+
 def add_events_in_database(name, hour, minute, day, month, duration, importance):
     """
     DEF:
@@ -580,7 +753,6 @@ def add_events_in_database(name, hour, minute, day, month, duration, importance)
 
     # Test and affectation:
     id_month = month_dic.get(month)
-    print(id_month)
     if id_month == None:
         print(f"[add_events_in_database] Error: month not in dictionnary")
         return

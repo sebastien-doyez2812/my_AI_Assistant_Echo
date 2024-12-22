@@ -1,7 +1,7 @@
 {
     "presentation":
     [
-        "Je suis JARVIS, votre assistant personnel. J'ai ete conçu pour vous aider dans votre quotidien. n'hesitez vous à me demander de l'aide!"
+        "Je suis JARVIS, votre assistant personnel. J'ai été conçu pour vous aider dans votre quotidien. n'hésitez pas à me demander de l'aide!"
     ],
     "veille":
     [
@@ -70,5 +70,12 @@
     "failure":
     [
         "Je n'ai pas compris votre demande"
-    ]
+    ],
+    "weather":
+    {
+        "date":
+        [
+            "Vous souhaitez la météo pour quelle date?"
+        ]
+    }
 }

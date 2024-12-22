@@ -27,7 +27,8 @@
         "qui es-tu",
         "Comment tu t'appelles?",
         "Comment t'appelles tu?",
-        " présentes-toi"
+        "présente-toi",
+        "peux-tu te présenter"
     ],
     "localisation":
     [
@@ -73,12 +74,10 @@
         "event",
         "events"
     ],
-    "AI":
-    {
-        "weather":
-        [
-            "habillé en fonction du temps",
-            "comment s'habiller"
-        ]
-    }
+    "analyse":
+    [
+        "Analyse",
+        "Comprendre",
+        "synthèse"
+    ]
 }
