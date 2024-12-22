@@ -67,7 +67,7 @@ def clear_screen(screen):
     meteo(screen)
     connection(screen)
     screen.blit(frame_JARVIS_icone, (600, 90))
-    screen.blit(frame_JARVIS_logo, (30,30))
+    screen.blit(frame_JARVIS_logo, (1400,30))
 
 
 def connection(screen):
@@ -82,14 +82,14 @@ def connection(screen):
     """
     
     frame_connection_icone = pygame.image.load(PATH_IMAGE + "connected.png")
-    screen.blit(frame_connection_icone, (45, 435))
+    screen.blit(frame_connection_icone, (45, 285))
     font = pygame.font.Font(None, 45)
-    text_robot = "Robot connected"
+    text_robot = "Robot not connected"
     text_surface_robot = font.render(text_robot, True, BLUE)
-    text_rect_robot = text_surface_robot.get_rect(topleft= (180, 500))
+    text_rect_robot = text_surface_robot.get_rect(topleft= (180, 350))
     text_wifi = "Wifi OK"
     text_surface_wifi = font.render(text_wifi, True, BLUE)
-    text_rect_wifi = text_surface_wifi.get_rect(topleft= (180, 450))
+    text_rect_wifi = text_surface_wifi.get_rect(topleft= (180, 300))
     screen.blit(text_surface_wifi, text_rect_wifi)
     screen.blit(text_surface_robot, text_rect_robot)
 
@@ -131,16 +131,16 @@ def meteo(screen):
         elif desc == "rain":
             icon_weather = "rain.png"
         else:
-            return
+            icon_weather = "idontknow.png"
     
         frame_weather_icone = pygame.image.load(PATH_IMAGE + icon_weather)
-        screen.blit(frame_weather_icone, (30, 260))
+        screen.blit(frame_weather_icone, (30, 50))
         font = pygame.font.Font(None, 60)
         text = str(temp) + "°C"
         text_surface_city = font.render(str(city), True, BLUE)
-        text_rect_city = text_surface_city.get_rect(topleft= (180, 320))
+        text_rect_city = text_surface_city.get_rect(topleft= (180, 110))
         text_surface = font.render(text, True, BLUE)
-        text_rect = text_surface.get_rect(topleft= (180, 260))
+        text_rect = text_surface.get_rect(topleft= (180, 50))
         screen.blit(text_surface, text_rect)
         screen.blit(text_surface_city, text_rect_city)
 
