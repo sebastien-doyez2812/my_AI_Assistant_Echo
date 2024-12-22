@@ -74,12 +74,10 @@
         "event",
         "events"
     ],
-    "AI":
-    {
-        "weather":
-        [
-            "habillé en fonction du temps",
-            "comment s'habiller"
-        ]
-    }
+    "analyse":
+    [
+        "Analyse",
+        "Comprendre",
+        "synthèse"
+    ]
 }
