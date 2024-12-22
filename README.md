@@ -1,6 +1,6 @@
-######################################################
+
 ##                  INSTALLATION                    ##
-######################################################
+
 
 We need two environnements for this project, du to a incompatibility:
 
@@ -14,9 +14,9 @@ pip install -r requirements_jarv_base.txt
 pip install -r equirements_aut_env.txt
 
 
-######################################################
+
 ##                   RUN JARVIS                     ##
-######################################################
+
 
 
 On the environnement jarvis_base:
