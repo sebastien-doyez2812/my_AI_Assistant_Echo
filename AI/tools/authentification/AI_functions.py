@@ -6,6 +6,9 @@ import numpy as np
 import os
 import sys
 import datetime
+
+os.add_dll_directory("C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin")
+
 # Define a class for the distance between the the anchor img 
 # and the verification image:
 class L1Dist(Layer):
