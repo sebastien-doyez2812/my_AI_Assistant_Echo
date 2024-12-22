@@ -20,4 +20,4 @@ pip install -r equirements_aut_env.txt
 
 
 On the environnement jarvis_base:
-python main.p
+python main.py
