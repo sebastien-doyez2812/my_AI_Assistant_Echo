@@ -58,13 +58,14 @@ def autentification(screen, cap, font):
         text_surface = font.render("Running, please wait......", True, (0,0,255))
         text_rect = text_surface.get_rect(topleft = (620,670))
         screen.blit(text_surface, text_rect)
+        
         ###########################################
         ##        Implementation of AI here      ##
         ###########################################
 
         pygame.display.flip()
 
-        command = ["conda", "run", "-n",  "tf", "python", "AI/tools/authentification/AI_functions.py"]
+        command = ["conda", "run", "-n", "aut_env", "python", "AI/tools/authentification/AI_functions.py"]
 
         subprocess.run(command, capture_output=True, text=True)
         

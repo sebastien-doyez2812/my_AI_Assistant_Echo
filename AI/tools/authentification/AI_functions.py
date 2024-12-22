@@ -5,7 +5,11 @@ import cv2
 import numpy as np
 import os
 import sys
-import datetime
+import datetime     
+
+# To solde cudart error
+os.add_dll_directory("C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.6/bin")
+
 # Define a class for the distance between the the anchor img 
 # and the verification image:
 class L1Dist(Layer):
@@ -100,14 +104,13 @@ def authentification_AI(model, img):
     for i in range(nb_elements):
         sum += results[i]
 
-
     return sum/nb_elements
 
 
 
 # Create the siamise model:
 siamese = make_siamese_model()
-siamese.load_weights("AI/tools/authentification/weights.h5")
+siamese.load_weights("AI/tools/authentification\weights.h5")
 siamese.summary()
 
 

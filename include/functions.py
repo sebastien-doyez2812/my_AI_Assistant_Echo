@@ -12,11 +12,12 @@ import json
 import requests
 import wikipediaapi
 from datetime import datetime
-from googletrans import Translator
+#from googletrans import Translator
 from include.header import *
 from pygame import mixer
 import unicodedata
-
+from AI.tools.llms import llm as llm
+from AI.tools.llms import agent as agent
 ####################################
 ##      STANDARD FUNCTIONS        ##
 ####################################         
@@ -27,7 +28,7 @@ engine.setProperty('volume', 1.5)
 engine.setProperty('rate', 200)
 
 # To translate in French:
-translator = Translator()
+#translator = Translator()
 # Fast research:
 user_agent_wikipedia = "JarvisPython/1.0 (https://github.com/sebastien-doyez2812/AI-projects/AI_ChatBot)"
 wiki = wikipediaapi.Wikipedia(user_agent_wikipedia, 'fr')
@@ -89,6 +90,22 @@ def process_command(command, data, answer, id_user):
     # Basic interaction:
     add_request(command, id_user)
 
+    if any(keyword in command for keyword in data["salutation"]):
+
+        prompt = read_text_from_json(PATH_PROMPTS)["salutation"].format(USER = USER)
+        sentence = llm.llm.invoke(prompt)
+        return sentence
+    
+    if any(keyword in command for keyword in data["presentation"]):
+        # TODO: to delete
+        sentence = llm.llm.invoke(read_text_from_json(PATH_PROMPTS)["presentation"])
+        return sentence
+
+    if  any(keyword in command for keyword in data["veille"]):
+        #TODO to delete
+        sentence = llm.invoke(read_text_from_json(PATH_PROMPTS)["sleep"])
+        return sentence
+
     if any(keyword in command for keyword in data["historique"]):
         word_to_find = None
         # contenant le mot ___ ou contenant ____
@@ -111,35 +128,17 @@ def process_command(command, data, answer, id_user):
             speak(read_text_from_json(PATH_ANSWER_JSON)["history"]["success"])
             for i in range(len(day)):
                 sentence = f" le {day} {month}, a {hour} heure et {minute} minutes."
-                #TODO delete 
-                #speak(sentence)
         else: 
             print("find_word ERROR: unable to understand the word")
         return sentence
     
-    if any(keyword in command for keyword in data["salutation"]):
-        sentence = f"Bonjour {USER},\n Comment puis je vous aider aujourd'hui?"
-        #TODO: to delete
-        #speak(sentence)
-        return sentence
-    
-    if any(keyword in command for keyword in data["presentation"]):
-        # TODO: to delete
-        #speak(answer["presentation"])
-        return answer["presentation"][0]
-
-    if  any(keyword in command for keyword in data["veille"]):
-        #TODO to delete
-        #speak(answer["veille"])
-        #TODO: faire un mode veille
-        return answer["veille"][0]
-
     # Basic fonctionnalities:
     # What time is it?
     if any(keyword in command for keyword in data["heure"]):
-        sentence = get_hour()
-        #TODO: to delete
-        #speak(sentence)
+        # I could use a AI agent, but the local LLM are not very good for that
+        hour = get_hour()
+        prompt = read_text_from_json(PATH_PROMPTS)["hour"].format(TIME = hour)
+        sentence = llm.llm.invoke(prompt)
         return sentence
 
     # What's the weather?
@@ -181,9 +180,6 @@ def process_command(command, data, answer, id_user):
     if any(keyword in command for keyword in data["localisation"]):
         city = get_localisation()
         sentence = f"Nous sommes a {city}"
-        
-        # TODO: to delete
-        #speak(sentence)
         return sentence
     
     # Search on the web
@@ -195,12 +191,12 @@ def process_command(command, data, answer, id_user):
 
     if any(keyword in command for keyword in data["recherche rapide"]):
         print("recherche rapide")
-        sentence = do_fast_research(command)
+        sentence = llm.llm.invoke(f"résume ces résultats de recherche : {do_fast_research(command)}").replace("*", "")
         return sentence 
     
     if any(keyword in command for keyword in data["recherche"]):
         query = re.search(r"cherche (.+)", command) 
-        search(query.group(1))
+        sentence = search(query.group(1))
         return sentence
     
     # Functions with the database:
@@ -211,6 +207,7 @@ def process_command(command, data, answer, id_user):
         else:
             play_music_offline()
         return "J'ai arrété la musique"
+    
     if any(keyword in command for keyword in data["event"]):
         if "ajoute" in command:
             add_event()
@@ -228,13 +225,19 @@ def process_command(command, data, answer, id_user):
                 get_event("name", name)
                 return
 
-
     #######################################
     ##       AI Functionnalities         ##
     #######################################
+    if command == None:
+        return
+    if any(keyword in command for keyword in data["analyse"]):
+        res = agent.multi_agent_system.execute_task(command)
+        return res.get("output", "").replace("*", "")
+    else:
+        # Use the agent to have a reponse
+        return llm.llm.invoke(command)
 
-    if any(keyword in command for keyword in data["AI"]["weather"]):
-        get_weather() 
+    
 
     
 
@@ -300,7 +303,7 @@ def get_hour():
     try:
         now = datetime.now()
         current_time = now.strftime("%H:%M")
-        return f"Il est {current_time}"
+        return current_time
     except Exception as e:
         print(f"get_hour error: {e}")
 
@@ -345,7 +348,7 @@ def get_weather():
             desc = data["weather"][0]["description"]
             
             # To translate:
-            description_trans= translator.translate(desc, src='en', dest='fr')
+            description_trans= desc #translator.translate(desc, src='en', dest='fr')
             sentence = f"Aujourd'hui, à {city}, il fait {temp} degrées, mais le ressenti est de {real_temp} degrées. Le climat est {description_trans.text}"
             return sentence
     except Exception as e:
@@ -442,30 +445,6 @@ def search(query):
     webbrowser.open(url)
     sentence = f"Voici les résultats pour {query} sur Google."
     return sentence
-
-
-def get_weather_at(city):
-    """
-    Give us the weather at a specific place
-    
-    ARGS:
-        city: string
-    """
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={read_text_from_json(PATH_PARAMETERS)["api_meteo"][0]}&units=metric"
-    try: 
-        response = requests.get(url)
-        data = response.json()       
-        if data["cod"] != "404": #error code
-            weather = data["main"]
-            temp = weather["temp"]
-            desc = data["weather"][0]["description"]
-            description = translator.translate(desc, src='en', dest='fr')
-            sentence = f"La température à {city} est de {temp} degrés Celsius, avec {description.text}"
-        else:
-            sentence = f"Je n'ai pas pu trouver la météo pour {city}"
-            return sentence
-    except Exception as e:
-        speak(f"Je n'ai pas pu récupérer les données météos. Erreur {str(e)}")
 
 
 def youtube(request):
@@ -701,7 +680,6 @@ def add_event():
         return
     add_events_in_database(name, hour, minute, day, month, duration, importance)
 
-
 # TODO: adding a functionality of translation on the GUI
 def translate(texte):#, source_lang='en', target_lang='fr'):
     """
@@ -720,9 +698,9 @@ def translate(texte):#, source_lang='en', target_lang='fr'):
     return a translation of the text
     """
     print(texte)
-    traducteur = Translator()
-    traduction = traducteur.translate(texte, src='en', dest='fr')
-    return traduction.text
+    #traducteur = Translator()
+    #traduction = traducteur.translate(texte, src='en', dest='fr')
+    #return traduction.text
 
 
 def add_events_in_database(name, hour, minute, day, month, duration, importance):
