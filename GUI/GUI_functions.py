@@ -25,10 +25,12 @@ def append_n_to_display(sentence):
     the sentence 
     """
     sentence_displayed = ""
+    sentence = sentence.replace("#", "").replace("*","")
+
     words = sentence.split()
     for i in range (len(words)):
         sentence_displayed += " " + words[i]
-        if i % 5 == 0 and i != 0: 
+        if i % 7 == 0 and i != 0: 
             sentence_displayed += "\n"
     return sentence_displayed
 
@@ -47,7 +49,7 @@ def display_sentence(sentence_n, font, screen):
     space = 5
     for i in range ( len(lines)):
         text_surface = font.render(lines[i], True, BLUE)
-        text_rect = text_surface.get_rect(topleft = (600,650 + i *(space + text_surface.get_height())))
+        text_rect = text_surface.get_rect(topleft = (450,585 + i *(space + text_surface.get_height())))
         screen.blit(text_surface, text_rect)
 
 def clear_screen(screen):
@@ -67,7 +69,7 @@ def clear_screen(screen):
     meteo(screen)
     connection(screen)
     screen.blit(frame_JARVIS_icone, (600, 90))
-    screen.blit(frame_JARVIS_logo, (1400,30))
+    screen.blit(frame_JARVIS_logo, (1320,30))
 
 
 def connection(screen):
@@ -84,14 +86,14 @@ def connection(screen):
     frame_connection_icone = pygame.image.load(PATH_IMAGE + "connected.png")
     screen.blit(frame_connection_icone, (45, 285))
     font = pygame.font.Font(None, 45)
-    text_robot = "Robot not connected"
-    text_surface_robot = font.render(text_robot, True, BLUE)
-    text_rect_robot = text_surface_robot.get_rect(topleft= (180, 350))
+    #text_robot = "Robot not connected"
+    #text_surface_robot = font.render(text_robot, True, BLUE)
+    #text_rect_robot = text_surface_robot.get_rect(topleft= (180, 350))
     text_wifi = "Wifi OK"
     text_surface_wifi = font.render(text_wifi, True, BLUE)
     text_rect_wifi = text_surface_wifi.get_rect(topleft= (180, 300))
     screen.blit(text_surface_wifi, text_rect_wifi)
-    screen.blit(text_surface_robot, text_rect_robot)
+    #screen.blit(text_surface_robot, text_rect_robot)
 
 def meteo(screen):
     """

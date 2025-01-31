@@ -1,83 +1,84 @@
 {
     "salutation":[
-        "bonjour",
-        "salut",
+        "Hello",
+        "hello",
         "allo",
-        "yo"
+        "Hi",
+        "hi",
+        "good morning",
+        "good afternoon",
+        "Good evening"
     ],
     "veille": [
-        "dodo",
-        "veille",
-        "arret"
+        "good night",
+        "stand by"
     ],
     "meteo" : [
-        "temps",
-        "météo",
+        "weather",
+        "Weather",
         "climat",
-        "température"
+        "temperature"
     ],
     "heure":
     [
-        "quelle heure est-il",
-        "donner l'heure",
-        "heure"
+        "what time is it",
+        "hour",
+        "hours",
+        "time"
     ],
     "presentation":
     [
-        "qui es-tu",
-        "Comment tu t'appelles?",
-        "Comment t'appelles tu?",
-        "présente-toi",
-        "peux-tu te présenter"
+        "who are you",
+        "What is your name",
+        "what's your name",
+        "introduce yourself", 
+        "name"
     ],
     "localisation":
     [
-        "où sommes-nous",
-        "localisation"
+        "where are you",
+        "where",
+        "location"
     ],
     "recherche rapide":
     [
-        "recherche rapide",
-        "qu'est ce",
-        "recherche rapidement"
+        "fast search",
+        "what is"
     ],
     "recherche":
     [
-        "cherche sur internet",
-        "cherche",
+        "search",
+        "search on the web",
+        "web research",
         "google",
         "internet"
     ],
     "youtube":
     [
         "YouTube",
-        "recherche sur YouTube"
+        "youtube"
     ],
     "musique":
     [   
-        "Joue de la musique",
-        "musique",
-        "son"
+        "play musics",
+        "music",
+        "musics"
     ],
     "historique":
     [
-        "historique",
-        "mémoire",
-        "memoire",
-        "requète",
-        "contenant"
+        "history",
+        "memory",
+        "request"
     ],
     "event":
     [
-        "événement",
-        "événements",
-        "event",
-        "events"
+        "events",
+        "event"
     ],
     "analyse":
     [
-        "Analyse",
-        "Comprendre",
-        "synthèse"
+        "Analysis",
+        "Understand",
+        "Synthesis"
     ]
 }

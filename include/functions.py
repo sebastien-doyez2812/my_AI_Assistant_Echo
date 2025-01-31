@@ -27,11 +27,17 @@ engine = pyttsx3.init()
 engine.setProperty('volume', 1.5)
 engine.setProperty('rate', 200)
 
+
+voices = engine.getProperty('voices')
+# voice 0: french
+# voice 1: english
+engine.setProperty('voice', voices[1].id)
+
 # To translate in French:
 #translator = Translator()
 # Fast research:
 user_agent_wikipedia = "JarvisPython/1.0 (https://github.com/sebastien-doyez2812/AI-projects/AI_ChatBot)"
-wiki = wikipediaapi.Wikipedia(user_agent_wikipedia, 'fr')
+wiki = wikipediaapi.Wikipedia(user_agent_wikipedia, 'en')
 
 # For the Database:
 jarvis_database = mysql.connector.connect(
@@ -91,9 +97,9 @@ def process_command(command, data, answer, id_user):
     add_request(command, id_user)
 
     if any(keyword in command for keyword in data["salutation"]):
-
+        print("heeeeeeeyyy")
         prompt = read_text_from_json(PATH_PROMPTS)["salutation"].format(USER = USER)
-        sentence = llm.llm.invoke(prompt)
+        sentence = f"Hello {USER}, how can I assist you today?"#llm.llm.invoke(prompt)
         return sentence
     
     if any(keyword in command for keyword in data["presentation"]):
@@ -103,8 +109,106 @@ def process_command(command, data, answer, id_user):
 
     if  any(keyword in command for keyword in data["veille"]):
         #TODO to delete
-        sentence = llm.invoke(read_text_from_json(PATH_PROMPTS)["sleep"])
+        sentence = llm.llm.invoke(read_text_from_json(PATH_PROMPTS)["sleep"])
         return sentence
+   
+    # Basic fonctionnalities:
+    # What time is it?
+    if any(keyword in command for keyword in data["heure"]):
+        # I could use a AI agent, but the local LLM are not very good for that
+        hour = get_hour()
+        prompt = read_text_from_json(PATH_PROMPTS)["hour"].format(TIME = hour)
+        sentence = llm.llm.invoke(prompt)
+        return sentence
+
+    # What's the weather?
+    if any(keyword in command for keyword in data["meteo"]):
+        query = re.search(r"weather for (.+)", command) or re.search(r"weather at (.+)", command)
+        if query != None:
+            city = query.group(1).strip()
+        else:
+            city = get_localisation()
+        
+        print(f"ville = {city}")
+        speak(read_text_from_json(PATH_ANSWER_JSON)["weather"]["date"])
+        date_listen = listen()
+        today = date.today()
+        if "today" in date_listen:
+            day = today
+        elif "tomorrow" in date_listen:
+            day = today + timedelta(days=1)
+        elif "in" in date_listen:
+            print(date_listen)
+            match = re.search(r"\d+", date_listen)
+            print(match)
+            if match:
+                day = today + timedelta(days = int(match.group()))
+        else: 
+            #TODO: To improve!!!!
+            # TODO a ajouter dans le JSON
+            speak("I did not understand the day...")
+            speak(" Give me the day")
+            dd = int(listen())
+            speak("give me the month")
+            mm = int(listen())
+            speak( "and the year?")
+            aaaa = int(listen())
+            day = f"{aaaa}-{mm}-{dd}"
+        print(day)
+        sentence = get_weather2(remove_accents(city), day)
+        return sentence
+
+    # Where are we?
+    if any(keyword in command for keyword in data["localisation"]):
+        city = get_localisation()
+        sentence = f"We are at {city}"
+        return sentence
+    
+    # Search on the web
+    if any(keyword in command for keyword in data["youtube"]):
+        query = re.search(r"search on YouTube (.+)", command)
+        print(query)
+        if query != None:            
+            youtube(query.group(1))
+            return "Opening Youtube, sir!"
+        return
+
+    if any(keyword in command for keyword in data["recherche rapide"]):
+        print("recherche rapide")
+        sentence = llm.llm.invoke(f"Summarize those result in 30 words maximum: {do_fast_research(command)}").replace("*", "")
+        return sentence 
+    
+    if any(keyword in command for keyword in data["recherche"]):
+        query = re.search(r"search (.+)", command) 
+        sentence = search(query.group(1))
+        return sentence
+    
+    # Functions with the database:
+    if any(keyword in command for keyword in data["musique"]):
+        query = re.search(r"(.+) online", command)
+        if query != None:
+            play_music_online()
+        else:
+            play_music_offline()
+        return "I stop the music."
+    
+    if any(keyword in command for keyword in data["event"]):
+        if "add" in command:
+            add_event()
+            return "Event added!"
+        if "Is a event" in command:
+            # TODO: a améliorer dans le futur:
+            # mettre dans le json
+            if "today" in command:
+                today = datetime.now()
+                get_event("day", today.strftime("%d") , today.strftime("%m"))
+                return
+            if "description" in command:
+                speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["name"])
+                name = listen()
+                get_event("name", name)
+                return
+
 
     if any(keyword in command for keyword in data["historique"]):
         word_to_find = None
@@ -131,99 +235,6 @@ def process_command(command, data, answer, id_user):
         else: 
             print("find_word ERROR: unable to understand the word")
         return sentence
-    
-    # Basic fonctionnalities:
-    # What time is it?
-    if any(keyword in command for keyword in data["heure"]):
-        # I could use a AI agent, but the local LLM are not very good for that
-        hour = get_hour()
-        prompt = read_text_from_json(PATH_PROMPTS)["hour"].format(TIME = hour)
-        sentence = llm.llm.invoke(prompt)
-        return sentence
-
-    # What's the weather?
-    if any(keyword in command for keyword in data["meteo"]):
-        query = re.search(r"météo pour (.+)", command) or re.search(r"météo à (.+)", command)
-        if query != None:
-            city = query.group(1).strip()
-        else:
-            city = get_localisation()
-        
-        print(f"ville = {city}")
-        speak(read_text_from_json(PATH_ANSWER_JSON)["weather"]["date"])
-        date_listen = listen()
-        today = date.today()
-        if "aujourd'hui" in date_listen:
-            day = today
-        elif "demain" in date_listen:
-            day = today + timedelta(days=1)
-        elif "dans" in date_listen:
-            match = re.search(r"\d+", date_listen)
-            if match:
-                day = today + timedelta(days = int(match.group()))
-        else: 
-            #TODO: To improve!!!!
-            # TODO a ajouter dans le JSON
-            speak("je n'ai pas compris la date...")
-            speak(" donnez moi le jour que vous désirez (chiffre):")
-            dd = int(listen())
-            speak("donnez moi le mois (chiffre uniquement)")
-            mm = int(listen())
-            speak( "et l'année?")
-            aaaa = int(listen())
-            day = f"{aaaa}-{mm}-{dd}"
-        print(day)
-        sentence = get_weather2(remove_accents(city), day)
-        return sentence
-
-    # Where are we?
-    if any(keyword in command for keyword in data["localisation"]):
-        city = get_localisation()
-        sentence = f"Nous sommes a {city}"
-        return sentence
-    
-    # Search on the web
-    if any(keyword in command for keyword in data["youtube"]):
-        query = re.search(r"recherche sur Youtube (.+)", command)
-        if query != None:
-            youtube(query.group(1))
-        return "Ouverture de Youtube"
-
-    if any(keyword in command for keyword in data["recherche rapide"]):
-        print("recherche rapide")
-        sentence = llm.llm.invoke(f"résume ces résultats de recherche : {do_fast_research(command)}").replace("*", "")
-        return sentence 
-    
-    if any(keyword in command for keyword in data["recherche"]):
-        query = re.search(r"cherche (.+)", command) 
-        sentence = search(query.group(1))
-        return sentence
-    
-    # Functions with the database:
-    if any(keyword in command for keyword in data["musique"]):
-        query = re.search(r"(.+) en ligne", command)
-        if query != None:
-            play_music_online()
-        else:
-            play_music_offline()
-        return "J'ai arrété la musique"
-    
-    if any(keyword in command for keyword in data["event"]):
-        if "ajoute" in command:
-            add_event()
-            return "événement ajouté"
-        if "ai-je" in command:
-            # TODO: a améliorer dans le futur:
-            # mettre dans le json
-            if "aujourd'hui" in command:
-                today = datetime.now()
-                get_event("day", today.strftime("%d") , today.strftime("%m"))
-                return
-            if "description" in command:
-                speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["name"])
-                name = listen()
-                get_event("name", name)
-                return
 
     #######################################
     ##       AI Functionnalities         ##
@@ -232,10 +243,10 @@ def process_command(command, data, answer, id_user):
         return
     if any(keyword in command for keyword in data["analyse"]):
         res = agent.multi_agent_system.execute_task(command)
-        return res.get("output", "").replace("*", "")
+        return llm.llm.invoke("Summarize this in less than 25 words: " + res.get("output", "").replace("*", ""))
     else:
         # Use the agent to have a reponse
-        return llm.llm.invoke(command)
+        return llm.llm.invoke("in 30 words maximum, answer to this: " + command)
 
     
 
@@ -263,7 +274,7 @@ def listen():
     
     # To avoid the exception UnknowVeluError, we use a try except
     try:
-        command = recognizer.recognize_google(audio, language="fr-FR")
+        command = recognizer.recognize_google(audio, language="en-EN")
         return command
     except sr.UnknownValueError:
         return None
@@ -396,11 +407,11 @@ def get_weather2(city,date):
                         condition = "ciel couvert"
                     #TODO add translation???
                     # TODO: a ameliorer, peut etre mettre le texte dans un JSON???
-                    return (f"Voici mes prévisions pour {city} le {date} : {condition}. "
-                            f"Température entre {temp_min} degrés et {temp_max} degrés.")
-            return f"Désolé, je n'ai pas trouvé de prévisions pour la date {date}."
+                    return (f"This is my predictions for {city}, the {date} : {condition}. "
+                            f"temperature between {temp_min} °C and {temp_max} °C.")
+            return f"Sorry, I did not find predictions for the {date}."
         else:
-            return f"Erreur API : {data['error']['message']}"
+            return f"Error API : {data['error']['message']}"
     except Exception as e:
         print(e)
 
@@ -417,7 +428,7 @@ def do_fast_research(command):
         the command( what JARVIS heard)
     """
     sentence = ""
-    query = re.search(r"recherche rapide sur (.+)", command) or re.search(r"Qu'est ce qu'un (.+)", command) or re.search(r"Qu'est ce qu'une (.+)", command) or re.search(r"Recherche rapidement (.+)", command)
+    query = re.search(r"fast search on (.+)", command) or re.search(r"what is (.+)", command) or re.search(r"who is (.+)", command) or re.search(r"why (.+)", command)
     if query != None:
         page = wiki.page(query.group(1))
         if page.exists():
@@ -429,7 +440,7 @@ def do_fast_research(command):
 
             if "oui" in command:
                 search(query.group(1))
-                sentence = f"Voici les résultats pour {query.group(1)}"
+                sentence = f"This is the result for {query.group(1)}"
     else:
         sentence = read_text_from_json(PATH_ANSWER_JSON)["failure"]
     return sentence
@@ -443,7 +454,7 @@ def search(query):
     """
     url = f"https://www.google.com/search?q={query}"
     webbrowser.open(url)
-    sentence = f"Voici les résultats pour {query} sur Google."
+    sentence = f"This is what I found for {query} on Google."
     return sentence
 
 
@@ -456,7 +467,7 @@ def youtube(request):
     """
     url = f"https://www.youtube.com/results?search_query={request}"
     webbrowser.open(url)
-    speak(f"Voici les résultats pour {request} sur Youtube.")
+    speak(f"This is the result for {request} on Youtube.")
 
 ################################################
 # Functions with the use of the database       #
@@ -491,40 +502,46 @@ def play_music_offline():
         #TODO mettre le 2 dans un json:
 
         # Take a random number, and go to the music with this id
-        index = random.randint(1,2)
+        index = 1#random.randint(1,2)
         jarvis_cursor.execute(f"SELECT path FROM musique WHERE id = {index}")
         path = jarvis_cursor.fetchall()[0][0]
 
         # Creation of a memory for the previous song
         path_mem = path
         play_song(path)
-        speak("Je joue votre musique, utilisez les commandes vocales pour changer")
         while True:
 
             command = listen()
             if command != None:
-                if "suivant" in command.lower() or "change" in command.lower():
+                if "next" in command.lower() or "change" in command.lower():
                     # Chose another song:
-                    index = random.randint(1,2)
+                    speak("I Change the music...")
+                    index = 2#random.randint(1,2)
                     jarvis_cursor.execute(f"SELECT path FROM musique WHERE id = {index}")
                     path_mem = path
                     path = jarvis_cursor.fetchall()[0][0]
 
                     # Play the song
+                    
                     play_song(path)
-                    speak("Changement de musique")
-                elif "précédent" in command.lower() or "retour" in command.lower():
+                    
+                elif "previous" in command.lower() or "return" in command.lower():
+                    speak("This is the previous song...")
                     play_song(path_mem)
-                    speak("Retour a la musique précédente")
+                    
                 elif "pause" in command.lower():
+                    speak("Musique paused")
                     mixer.music.pause()
-                    speak("Musique mise en pause")
-                elif "reprend" in command.lower() or "continue" in command.lower():
+                    
+                elif "continue" in command.lower():
+                    speak("Unpause the music.")
                     mixer.music.unpause()
-                    speak("Musique reprise")
-                elif "stop" in command.lower() or "arrête" in command.lower():
+                    
+                elif "stop" in command.lower():
                     mixer.music.stop()
-                    return "Musique arrêtée"
+                    return "I stopped the music..."
+                    
+                    
     except Exception as e:
         mixer.music.stop()
         print(e)
@@ -632,8 +649,12 @@ def add_event():
     #Ask the date:
     speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["when"])
     date = listen()
-    if "le" in date or "the" in date:
-        _,day, month = date.split()
+    if "today" in date:
+        day = datetime.now()
+    elif "le" in date or "the" in date:
+        match  = re.search(r"the (\d+)th")
+        day = match.group(1)
+        _,_, month = date.split()
     else:
         day, month = date.split()
 
@@ -642,7 +663,8 @@ def add_event():
     match = None
     while match == None:
         hour_and_minute = listen()
-        match = re.search(r"(\d+) h (\d+)", hour_and_minute)
+        print(hour_and_minute)
+        match = re.search(r"(\d+):(\d+) a.m.", hour_and_minute) or re.search(r"(\d+):(\d+) p.m.", hour_and_minute)
         if match:
             hour = match.group(1)
             minute = match.group(2)
@@ -653,17 +675,19 @@ def add_event():
     speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["duration"]["what duration"])
     duration = None
     duration = listen()
+
     while duration == None:
         speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["duration"]["fail"])
         duration = listen()
 
-    # Importance of the event:
-    speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["importance"]["what importance"])
-    importance = None
-    importance = listen()
-    while importance not in ["faible", "modéré", "important", "critique"]:
-        speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["importance"]["fail"])
-        importance = listen()
+    duration = re.search(r"(\d+) hour", duration)
+    # # Importance of the event:
+    # speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["importance"]["what importance"])
+    # importance = None
+    # importance = listen()
+    # while importance not in ["faible", "modéré", "important", "critique"]:
+    #     speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["importance"]["fail"])
+    #     importance = listen()
 
     # Name of the event:
     speak(read_text_from_json(PATH_ANSWER_JSON)["events"]["name"])
@@ -678,7 +702,7 @@ def add_event():
     except Exception as e:
         print(f"[process: events] Error: {e}")
         return
-    add_events_in_database(name, hour, minute, day, month, duration, importance)
+    add_events_in_database(name, hour, minute, day, month, duration)
 
 # TODO: adding a functionality of translation on the GUI
 def translate(texte):#, source_lang='en', target_lang='fr'):
@@ -731,25 +755,25 @@ def add_events_in_database(name, hour, minute, day, month, duration, importance)
     None
     """
     month_dic = {
-        "janvier"     : 1,
-        "février"     : 2,
-        "mars"        : 3,
-        "avril"       : 4,
-        "mai"         : 5,
-        "juin"        : 6,
-        "juillet"     : 7,
-        "aout"        : 8,
-        "septembre"   : 9,
-        "octobre"     : 10,
-        "novembre"    : 11,
-        "décembre"    : 12
+        "january"     : 1,
+        "february"     : 2,
+        "march"        : 3,
+        "april"       : 4,
+        "may"         : 5,
+        "june"        : 6,
+        "july"     : 7,
+        "august"        : 8,
+        "september"   : 9,
+        "october"     : 10,
+        "november"    : 11,
+        "december"    : 12
     }
-    importance_dic = {
-        "faible": 0,
-        "modéré":1,
-        "important":2,
-        "critique":3
-    }
+    # importance_dic = {
+    #     "faible": 0,
+    #     "modéré":1,
+    #     "important":2,
+    #     "critique":3
+    # }
 
     # Test and affectation:
     id_month = month_dic.get(month)
@@ -757,10 +781,10 @@ def add_events_in_database(name, hour, minute, day, month, duration, importance)
         print(f"[add_events_in_database] Error: month not in dictionnary")
         return
     
-    importance_id = importance_dic.get(importance)
-    if importance_id == None:
-        print(f"[add_events_in_database] Error: importance not in dictionnary")
-        return
+    # importance_id = importance_dic.get(importance)
+    # if importance_id == None:
+    #     print(f"[add_events_in_database] Error: importance not in dictionnary")
+    #     return
     
     # Test to see if the hour, minute are realistic:
     if hour > 23 or hour <0:
@@ -785,7 +809,7 @@ def add_events_in_database(name, hour, minute, day, month, duration, importance)
     id_event = jarvis_cursor.fetchall()[0][0]
 
     # Insert the event:
-    request_insert=(f"INSERT INTO `events`(`hour`, `minute`, `day`, `month`, `duration`, `description`, `importance`, `id`) VALUES ('{hour}','{minute}','{day}','{id_month}','{duration}','{name}','{importance_id}','{id_event}')")
+    request_insert=(f"INSERT INTO `events`(`hour`, `minute`, `day`, `month`, `duration`, `description`, `id`) VALUES ('{hour}','{minute}','{day}','{id_month}','{duration}','{name}','{id_event}')")
     
     jarvis_cursor.execute(request_insert)
 
@@ -807,37 +831,37 @@ def get_event(param, value1, value2= None):
     """
     request = None
     if param == "name":
-        request = f"SELECT description, hour, minute, day, month, importance FROM `events` WHERE description = '{value1}'"
+        request = f"SELECT description, hour, minute, day, month FROM `events` WHERE description = '{value1}'"
     if param == "day":
-        request = f"SELECT description, hour, minute, day, month, importance FROM `events` WHERE day = {value1} AND month = {value2}"
+        request = f"SELECT description, hour, minute, day, month FROM `events` WHERE day = {value1} AND month = {value2}"
     if request:
         jarvis_cursor.execute(request)
         result = jarvis_cursor.fetchall()
         result = result[0]
         if result == []:
-            speak(" il n'y a pas d'événements prévu pour ce jour")
-        else:
-            #TODO: Crée un dictionnaire globale??
-            importance_dic_reverse = {
-                0 :"faible",
-                1: "modéré",
-                2: "important",
-                3: "critique"
-            }
+            speak(" No event planned")
+        # else:
+        #     #TODO: Crée un dictionnaire globale??
+        #     importance_dic_reverse = {
+        #         0 :"faible",
+        #         1: "modéré",
+        #         2: "important",
+        #         3: "critique"
+        #     }
 
             month_dic_reverse = {
-                1: "janvier"   ,
-                2: "février"   ,
-                3: "mars"      ,
-                4: "avril"     ,
-                5: "mai"       ,
-                6: "juin"      ,
-                7: "juillet"   ,
-                8: "aout"      ,
-                9: "septembre" ,
-                10: "octobre"  ,
-                11: "novembre" ,
-                12: "décembre" 
+                1: "January"   ,
+                2: "February"   ,
+                3: "March"      ,
+                4: "April"     ,
+                5: "May"       ,
+                6: "june"      ,
+                7: "july"   ,
+                8: "august"      ,
+                9: "september" ,
+                10: "october"  ,
+                11: "november" ,
+                12: "december" 
             }
-            sentence = f"Vous avez l'événement {result[0]}, d'importance {importance_dic_reverse.get(result[5])}, prévu le {result[3]} {month_dic_reverse.get(result[4])} a {result[1]} heure {result[2]}"
+            sentence = f"Event {result[0]},  planned the {result[3]} {month_dic_reverse.get(result[4])} at {result[1]} : {result[2]}"
     return sentence

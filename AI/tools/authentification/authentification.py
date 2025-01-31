@@ -6,6 +6,7 @@ import subprocess
 
 def loading(screen,sentence, font):
     #TODO: define the 154 as the number of images is IMG/loading
+    time.sleep(2)
     for i in range(154):
         name = f"IMG/loading/frame_{i}.png"
         frame = cv2.imread(name)
@@ -70,7 +71,7 @@ def autentification(screen, cap, font):
         subprocess.run(command, capture_output=True, text=True)
         
         with open("AI/tools/authentification/result_aut.txt", 'r') as file:
-            if float(file.readline()) > 0.85:
+            if float(file.readline()) > 0.9:
                 is_user = True
             else: 
                 screen.fill((0,0,0))    
@@ -154,14 +155,14 @@ def start_jarvis(screen, font):
     """
 
     # Start the webcam:
-    cap = cv2.VideoCapture(0)
+    #cap = cv2.VideoCapture(0)
 
     # Check if the webcam is open:
-    if not cap.isOpened():
-        sys.exit()
+    #if not cap.isOpened():
+    #    sys.exit()
     
     # Loading screen: give Jarvis 2 seconds to start...
-    loading(screen, "JARVIS loading...", font)
+    loading(screen, "Echo loading...", font)
 
     # authentification screen:
-    autentification(screen,cap, font)
+    #autentification(screen,cap, font)

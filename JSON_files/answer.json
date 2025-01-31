@@ -1,81 +1,83 @@
 {
     "presentation":
     [
-        "Je suis JARVIS, votre assistant personnel. J'ai été conçu pour vous aider dans votre quotidien. n'hésitez pas à me demander de l'aide!"
+        "I am Jarvis, your AI assistant. I was designed to assist you in your daily life. Feel free to ask me for help!"
     ],
     "veille":
     [
-        "Je vais mettre en veille, n hesitez pas a me reveiller"
+        "I'll put on standby, don't hesitate to wake me up."
     ],
     "recherche rapide":
     {
         "success":
         [ 
-            "Voici les informations que j'ai trouvé"
+            "Here is the information I found."
         ],
         "failure":
         [
-            "Je n'ai pas trouvé d'information a ce sujet. Souhaitez vous une recherche plus approfondi?"
+            "I couldn't find any information on this topic. Would you like a more in-depth search?"
         ]
     },
     "events":
     {
         "when":
         [
-            "Quand a lieu l'événement?"
+            "When does the event take place?"
         ],
         "time":
         {
             "what time?":
             [
-                "A quel heure a lieu l'événement?"
+                "What time does the event take place?"
             ],
             "fail":
             [
-                "Je n'ai pas compris, Veuillez répéter"
+                "I didn't understand, please repeat."
             ]
-
         },
         "duration":
         {
             "what duration":
             [
-                "Combien de temps dure l'événement en heure?"
+                "How long does the event last in hours?"
             ],
-            "fail":[
-                "Je n'ai pas compris, Veuillez répéter"
+            "fail":
+            [
+                "I didn't understand, please repeat."
             ]
         }, 
         "importance":
         {
             "what importance":
             [
-                "Quelle est l'importance de l'événement? faible, modéré, important ou critique"
+                "What is the importance of the event? low, moderate, important, or critical."
             ],
-            "fail":[
-                "Je n'ai pas compris, Veuillez répéter"
+            "fail":
+            [
+                "I didn't understand, please repeat."
             ]
         },
         "name":
         [
-            "Quelle est le nom de l'événement?"
+            "What is the name of the event?"
         ]
     },
     "history":
     {
-        "success":[
-            "Cette requete à été faite"
+        "success":
+        [
+            "This request has been made."
         ]
     },
     "failure":
     [
-        "Je n'ai pas compris votre demande"
+        "I didn't understand your request."
     ],
     "weather":
     {
         "date":
         [
-            "Vous souhaitez la météo pour quelle date?"
+            "For which date would you like the weather?"
         ]
     }
 }

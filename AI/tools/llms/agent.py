@@ -65,9 +65,9 @@ class AnalyticalAgent:
         Let's approach this step by step:
         1) First, let's understand what we're being asked
         2) Then, let's identify the tools we need
-        3) Finally, let's execute the plan
+        3) Finally, let's execute the plan 
 
-        Reasoning:
+        Reasoning and make an answer in 30 words:
         """
         )
         self.reasoning_chain = LLMChain(
@@ -79,7 +79,7 @@ class AnalyticalAgent:
         reasoning = self.reasoning_chain.run(question)
         return {
             "reasoning": reasoning,
-            "answer": "Final answer based on analysis"
+            "answer": "Final answer with less tthan 25 words based on analysis"
         }
 
 class MultiAgentSystem:
@@ -121,11 +121,11 @@ class MultiAgentSystem:
     def execute_task(self, task):
         plan = self.coordinator_chain.run(task)
         
-        research_task = f"Fais une recherche suivant ce plan: {plan}"
+        research_task = f"Do a research using this plan: {plan}"
 
         research = self.reasearcher.run(research_task)
 
-        analysis_task = f"Fais une analyse suivant ces resultats: {research}"
+        analysis_task = f"Do an analysis with those results: {research}"
 
         analysis = self.analyzer.run(analysis_task)
 
@@ -134,5 +134,5 @@ class MultiAgentSystem:
         }
 
 # Multiagent:
-my_llm = OllamaLLM(model="gemma", prompt= "You are a useful AI agent, you give answer to question")
+my_llm = OllamaLLM(model="gemma", prompt= "You are a useful AI agent, you give answer to question in less than 25 words.")
 multi_agent_system = MultiAgentSystem(my_llm)
