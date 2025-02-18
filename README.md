@@ -27,7 +27,7 @@ python main.py
 ```
 
 ## Links
-- 📺 **YouTube Tutorial:** [Watch Here](https://www.youtube.com/watch?v=Zbyw4cplVvM&t=71s)
+- 📺 **YouTube Tutorial:** [Watch Here](https://www.youtube.com/watch?v=Zbyw4cplVvM&t)
 
 ---
 Enjoy using your AI-powered assistant! 🚀
